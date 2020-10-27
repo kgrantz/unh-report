@@ -1,15 +1,11 @@
 ---
-title: "UNH Report"
 output: 
-        html_document:
-                toc: true
-                toc_depth: 2
-        params:
-                run_checks: TRUE   
-            
-
+  html_document:
+    toc: true
+    toc_depth: 2
+  params:
+    run_checks: TRUE
 ---
-
 
 
 ```{r setup, include=FALSE}
@@ -282,6 +278,7 @@ output:
 
 ```
 
+# `r glue("UNH SURVEILLANCE REPORT: {report_date}")`
 ## SECTION A: EXECUTIVE SUMMARY
 
 ```{r exec-summary}
