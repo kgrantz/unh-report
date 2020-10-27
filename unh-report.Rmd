@@ -1,30 +1,770 @@
 ---
 title: "UNH Report"
-author: "Kyra Grantz"
-date: "10/21/2020"
 output: html_document
+params:
+  run_checks: TRUE
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+  knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message = FALSE)
+  knitr::opts_knit$set(eval.after = 'fig.cap')
+
+  fig_counter <- 1
+  
+  library(tidyverse)
+  library(glue)
+  library(colorspace)
+
 ```
 
-## R Markdown
+```{r data-load}
 
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+  routinetesting<- read_csv("raw_data/routinetesting.csv")
 
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+  isolationquarantine <- read_csv("raw_data/isolationquarantine.csv")
 
-```{r cars}
-summary(cars)
+  individualdemographics <- read_csv("raw_data/individualdemographics.csv")
+
 ```
 
-## Including Plots
+```{r params}
 
-You can also embed plots, for example:
-
-```{r pressure, echo=FALSE}
-plot(pressure)
+  ## QUESTION: do we want this to automatically be the date run, or some manually entered date?
+  report_date <- Sys.Date()
+  report_date_str_long <- as.character(format(report_date, format="%B %d, 2020"))
+  report_date_str_short <- as.character(format(report_date, format="%b %d"))
+  
+  # Date on which report begins
+  start_date <- report_date - 7
+  start_date_str_long <- as.character(format(start_date, format="%B %d, 2020"))
+  start_date_str_short <- as.character(format(start_date, format="%b %d"))
+  
+  # Date to which active cases are counted
+  report_date_minus10 <- report_date - 10
+  
+  # Number of 7-day periods since start of surveillance
+  # QUESTION: start is considered 3 Aug 2020?
+  n_periods <- as.numeric(difftime(report_date, as.Date("2020-08-03"), units = "weeks"))
+  
 ```
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+
+```{r demo-checks, eval=run_checks}
+
+  ## print out number of duplicate IDs, other aggregate information about the IDs
+
+```
+
+
+```{r demo-testing-merge}
+  
+  ## merge the testing and demographics datasets
+
+```
+
+
+```{r demo-testing-merge-checks}
+
+  ## add in conditional eval statement
+
+  ## how many IDs never tested? (by campus, by type)
+  ## how many IDs not tested in last 1 week? 2 weeks? (by campus, by type)
+
+```
+
+
+```{r demo-isolation-merge}
+
+  ## merge the isolation and demographics datasets
+
+```
+
+
+```{r demo-isolation-checks}
+
+  ## add in conditional eval statement
+
+  ## how many isolation/quar events don't have demo data?
+  
+  ## any overlapping quarantine periods?
+  ## any overlapping isolation periods?
+
+```
+
+
+```{r demo-testing-long-cleaning}
+
+  ## print out missingness in long testing dataset
+  ## drop missing variables
+
+
+	## Rename variables to be more accurate: collectdate > labeldate, collecttime > labeltime
+	
+
+  ## numeric categorical for user_status
+  ## print out all possibilities
+  ## 0, student; 1, faculty; 2, staff; 3, employee; 4, unknown
+  ## table roles by campus
+  ## role labels
+			# label define role_labl 0 "Student" 1 "Faculty" 2 "Staff" 3 "Employee" 4 "Contractor or Visitor"
+
+
+  ## numeric age categories
+  ## [15, 20), then 10y bins to 80+
+  ## table ages
+	## labels
+			# label define agecat_labl 1  "15-19" 2 "20-29" 3 "30-39" 4 "40-49" 5 "50-59" 6 "60-69" 7 "70-79" 8 "80+"
+
+  ## numeric gender categories from `sex`
+  ## print out all possibilities
+				# replace gender = 0 if strpos(sex, "Cisgender Man")
+				# replace gender = 1 if strpos(sex, "Cisgender Woman")
+				# replace gender = 0 if strpos(sex, "Male")
+				# replace gender = 1 if strpos(sex, "Female")
+				# replace gender = 2 if strpos(sex, "Transgender Man")
+				# replace gender = 3 if strpos(sex, "Transgender Woman")
+				# replace gender = 4 if strpos(sex, "Gender Non-Conforming")
+				# replace gender = 4 if strpos(sex, "Gender Queer")
+				# replace gender = 4 if strpos(sex, "Non-binary")
+				# replace gender = 5 if strpos(sex, "My identity is not listed")
+				# replace gender = 5 if strpos(sex, "Prefer not to say")
+  ## table genders by sex
+  ## labels
+  			# label define sex_labl 0 "Assigned Male at Birth" 1 "Assigned Female at Birth" 2 "Trans Man" 3 "Trans Woman" 4 "Genderqueer/Non-binary (GNB)" 5 "Not listed or prefer not to say"
+
+
+  ## numeric campus indicator
+  ## print out all possibilities
+				# replace campus1 = 0 if strpos(campus, "UNH Durham")
+				# replace campus1 = 1 if strpos(campus, "UNH LAW")
+				# replace campus1 = 1 if strpos(campus, "UNH Law")
+				# replace campus1 = 2 if strpos(campus, "UNH Manchester")
+				# replace campus1 = 3 if strpos(campus, "Other")
+  ## tab new with old
+  ## labels
+  			# label define campus_labl 0 "Durham" 1 "Concord (Law)" 2 "Manchester" 3 "Other"
+
+
+  ## numeric test result
+  ## print out all possibilities
+				# replace result1 = 0 if strpos(result, "Negative")
+				# replace result1 = 1 if strpos(result, "Positive")
+				# replace result1 = 2 if strpos(result, "Inconclusive")
+				# replace result1 = 3 if strpos(result, "Invalid")
+				# replace result1 = 3 if strpos(result, "Rejected")
+				# replace result1 = 3 if strpos(result, "No Result")
+				# replace result1 = 3 if strpos(result, "I got tested on")
+				# replace result1 = 3 if strpos(result, "Still haven")
+				# replace result1 = 3 if strpos(result, "Test Not Performed")
+				# replace result1 = 1 if strpos(result, "Positive Provided Letter")
+				# replace result1 = 3 if strpos(result, "received from school yet")
+  ## tab new with old
+  ## labels
+			# label define result_labl 0 "Neg" 1 "Pos" 2 "Inconclusive" 3 "Invalid/Rejected/No Result"
+
+
+  ## numeric program result
+  ## print out all possibilities
+				# replace college1 = 0 if strpos(college, "Liberal Arts")
+				# replace college1 = 1 if strpos(college, "Business")
+				# replace college1 = 2 if strpos(college, "Life Sciences And Ag")
+				# replace college1 = 3 if strpos(college, "Engineering")
+				# replace college1 = 4 if strpos(college, "Health And Human")
+				# replace college1 = 5 if strpos(college, "Graduate School")
+				# replace college1 = 6 if strpos(college, "Continuing Education")
+				# replace college1 = 7 if strpos(college, "UNH")
+				# replace college1 = 8 if strpos(college, "Law")
+				# replace college1 = 9 if strpos(college, "Thompson School of")
+  ## tab new with old
+  ## labels
+			# label define college_labl 0 "Lib Arts" 1 "Business"	2 "Agriculture" 3 "Engineering" 4 "Health" 5 "Graduate School" 6 "Continuing Ed" 7 "Manchester" 8 "Law"	9 "Applied Sciences"
+
+
+  ## on/off campus levels
+    ## 1 if no dorm listed
+
+	## recode dates
+			# gen testdate = labeldate
+			# replace testdate = resultsdate if resultsdate != .
+
+
+  ## numeric laboratory indicator
+  ## print out possibilities
+				# replace laboratory1 = 0 if strpos(laboratory, "Sequoia")
+				# replace laboratory1 = 1 if strpos(laboratory, "CMD")
+				# replace laboratory1 = 2 if strpos(laboratory, "HealthWellness")
+				# replace laboratory1 = 3 if strpos(laboratory, "PreArrival")
+				# replace laboratory1 = 4 if strpos(laboratory, "Quest") 
+				# replace laboratory1 = 5 if strpos(laboratory, "UNHLab_Temp") 
+  ## tab new with old
+  ## laboratory labels
+			# label define lab_labl 0 "Sequoia" 1 "Convenient MD" 2 "Health & Wellness" 3 "Pre-Arrival" 4 "Quest" 5 "Temp UNH Lab"
+			
+
+	## Dormitories
+  ## print out possibilities
+				# replace dormarea = 0 if strpos(dorm, "Congreve") | strpos(dorm, "Jessie") | strpos(dorm, "Lord") | strpos(dorm, "Mclaughlin") | strpos(dorm, "Sawyer") | strpos(dorm, "Scott") | strpos(dorm, "Stoke")
+				# replace dormarea = 1 if strpos(dorm,"Alexander") 	| strpos(dorm,"Engelhardt") 	| strpos(dorm,"Fairchild") 	| strpos(dorm,"Gibbs") 	| strpos(dorm,"Hetzel") 	| strpos(dorm,"Hunter") 	| strpos(dorm,"Mills") 	| strpos(dorm,"Devine") 	| strpos(dorm,"Hitchcock") 	| strpos(dorm,"Randall") 
+				# replace dormarea = 2 if strpos(dorm,"Christensen") 	| strpos(dorm,"Haaland") 	| strpos(dorm,"Handler") 	| strpos(dorm,"Hubbard") 	| strpos(dorm,"Peterson") 	| strpos(dorm,"Eaton") 	| strpos(dorm,"Hall House") 	| strpos(dorm,"Marston") 	| strpos(dorm,"Richardson") 	| strpos(dorm,"Williamson") 
+				# replace dormarea = 3 if strpos(dorm, "Woodside")
+				# replace dormarea = 4 if strpos(dorm, "Gables") 
+  ## tab new with old
+	## labels
+			# label define dormarea_labl 0 "Hills" 1 "Valley" 2 "Timbers" 3 "Woodside Apts" 4 "Gables Apts"
+
+		
+  ## binary test result indicators in long data - pos, neg, incon, invalid
+			# replace pos = 1 if result == 1
+			# replace neg = 1 if result == 0
+			# replace incon = 1 if result == 2
+			# replace invalid = 1 if result == 3
+	## labels yes/no
+
+
+  ## remove duplicate test results (labeldate, resultsdate, result, laboratory)
+
+
+  ## make sure those positive once do not have positive counted more than once
+    ## for each positive test result, check if there is another positive test result in the next 10 days
+    ## QUESTION: if there is -- create 'first positive' indicator that should be used for epi curves, etc?
+
+
+```
+
+
+```{r demo-testing-wide}
+
+  ## by UID, add a sample number
+  ## then make wide dataset by ID
+
+
+  ## print out max # of times someone was tested
+
+
+  ## active case indicator: who had a positive test in the last 10 days report_date_minus10 - report_date
+  
+
+  ## 7-day case indicator
+
+  
+  ## tested in last 10 days indicator
+
+
+  ## most recent lab result if tested in past week
+    ## pull out most recent test result for anyone tested in last week
+    ## (if there is more than one test on the last test date, use the positive)
+
+```
+
+
+```{r totals-by-date}
+
+  ## data frame: number first positive by campus, role, testdate
+
+  ## data frame: number first positive by campus status, campus, testdate
+
+  ## data frame: number pos, neg, incon, invalid, pos+neg, by campus, role, testdate
+
+  ## data frame: number total tests, by campus, lab, testdate
+
+  ## data frame: number pos, neg, pos+neg by week
+
+```
+
+## SECTION A: EXECUTIVE SUMMARY
+
+```{r exec-summary}
+
+  ## source executive summary chunk
+
+```
+
+
+## SECTION B: UNIVERSITY-WIDE SITUATION
+
+```{r Table-B1A-StateCond}
+
+  ## parse state page for current COVID19 cases, hospitalizations
+  ## operation levels with colors
+
+```
+
+
+```{r Table-B1B-CampusCond}
+
+  # BY CAMPUS + THRESHOLD INDICATOR if applicable
+    # Total tests, including repeats
+    # Tests per unique ID
+    # total positive test results
+    # total active cases from last 10 days
+    # active cases per 1000 tested
+    # average in isolation over last week
+    # average isolation beds in use
+    # average number in quarantine this week
+    # average quarantine beds in use
+
+```
+
+
+```{r Figure-B1-EpiCurve}
+
+  ## epi curve, new positive, all time, by day, colored by campus
+
+```
+
+
+```{r Figure-B2-EpiCurve-7day}
+
+  ## epi curve, new positive, last 7 days, by day, colored by campus
+
+```
+
+
+```{r Table-B3-TestSubmitted}
+  
+  ## all campuses combined, by role in last week:
+  ## all campuses combined, cumulative in last week and all time:
+    # total tests submitted
+    # unique IDs submitting (as prop of all IDs not previously positive)
+    # tests per unique ID
+
+```
+
+
+```{r Table-B4-MostRecentLab}
+
+  ## all campuses combined, by role + total:
+    # most recent result positive, neg, incon, invalid
+  
+```
+
+
+```{r Figure-B3-PropPositive}
+
+  ## by week, # pos / (# pos + # neg)
+
+```
+		
+		
+```{r Figure-B4-Quar-7day}
+
+  ## number in quarantine, by role. by day, last 7 days
+
+```
+
+
+```{r Figure-B5-Quar}
+
+  ## number in quarantine, by role. by day, all time
+
+```
+
+
+```{r Figure-B6-Isol-7day}
+
+  ## number in isolation, by role, by day, last 7 days
+
+```
+
+
+```{r Figure-B7-Isol}
+  
+  ## number in isolation, by role, by day, all time
+
+```
+
+
+## SECTION C: DURHAM CAMPUS
+
+```{r Table-C1-DurhamCond}
+
+  # This Week value + Threshold Indicator, if applicable
+    # total active cases from last 10 days
+    # active cases per 1000 tested
+    # average in isolation over last week
+    # average isolation beds in use
+    # average number in quarantine this week
+    # average quarantine beds in use
+
+```
+
+
+```{r Figure-C1-EpiCurve}
+
+  ## epi curve, new positive, all time, by day, colored by role
+
+```
+
+
+```{r Figure-C2-EpiCurve-7day}
+
+  ## epi curve, new positive, last 7 days, by day, colored by role
+
+```
+
+
+```{r Figure-C3-TestSubmitted}
+  
+  ## by week, total tests submitted (including repeats), colored by role
+
+```
+
+
+```{r Figure-C4A-PropPositive}
+
+  ## by week, # pos / (# pos + # neg)
+
+```
+
+
+```{r Figure-C4B-Map-Active}
+
+
+```
+
+
+```{r Figure-C4C-Map-Ever}
+
+
+```
+
+
+```{r Table-C2-OnOffCampus}
+
+  # average number daily active cases among students, by dorm vs no dorm
+    # current week
+    # last week
+    # % change
+    # sparkline % change all time
+
+```
+
+
+```{r Table-C3-MostRecentLab}
+
+  ## by role + total, last seven days: most recent result positive, neg, incon, invalid
+  
+```
+
+
+```{r Table-C4-TestSubmitted}
+  
+  ## by role in last week, cumulative in last week and all time:
+    # total tests submitted
+    # unique IDs submitting (as prop of all IDs not previously positive)
+    # tests per unique ID
+
+```
+
+
+```{r Table-C5-Lab}
+
+  # total number tests submitted by lab, last week + current week, sparkline weekly average over time
+
+```
+
+
+```{r Figure-C5-Quar}
+
+  ## number in quarantine, colored by quar location, by day, all time
+
+```
+
+
+```{r Figure-C6-Quar-7day}
+
+  ## number in quarantine, colored by quar location, by day, last 7 days
+
+```
+
+
+```{r Figure-C7-QuarBeds}
+
+  ## number quarantine beds in use by day
+
+```
+
+
+```{r Figure-C8-QuarBeds-7day}
+
+  ## number quarantine beds in use by day, past 7 days
+
+```
+
+
+```{r Figure-C9-Isol}
+  
+  ## number in isolation, colored by isolation location, by day, all time
+
+```
+
+
+```{r Figure-C10-Isol-7day}
+
+  ## number in isolation, colored by isolation location, by day, last 7 days
+
+```
+
+
+```{r Figure-C11-IsolBeds}
+
+  ## number isolation beds in use by day
+
+```
+
+
+```{r Figure-C12-IsolBeds-7day}
+
+  ## number isolation beds in use by day, past 7 days
+
+```
+
+
+```{r Table-C6-DetailedTable}
+
+  # Cumulative cases, previous week cases, this week cases, % change this week
+    # Total
+    # by symptom status
+    # by role
+    # by age
+    # by race/ethnicity
+    # by sex at birth
+    # by dorm area
+    # by college
+
+```
+
+
+## SECTION D: CONCORD CAMPUS (LAW)
+
+```{r Table-D1-ConcordCond}
+
+  # This Week value + Threshold Indicator, if applicable
+    # total active cases from last 10 days
+    # active cases per 1000 tested
+
+```
+
+
+```{r Figure-D1-EpiCurve}
+
+  ## epi curve, new positive, all time, by day, colored by role
+
+```
+
+
+```{r Figure-D2-EpiCurve-7day}
+
+  ## epi curve, new positive, last 7 days, by day, colored by role
+
+```
+
+
+```{r Figure-D3-TestSubmitted}
+  
+  ## by week, total tests submitted (including repeats), colored by role
+
+```
+
+
+```{r Figure-D4-PropPositive}
+
+  ## by week, # pos / (# pos + # neg)
+
+```
+
+
+```{r Table-D2-OnOffCampus}
+
+  # average number daily active cases among students, by dorm vs no dorm
+    # current week
+    # last week
+    # % change
+    # sparkline % change all time
+
+```
+
+
+```{r Table-D3-MostRecentLab}
+
+  ## by role + total, last seven days: most recent result positive, neg, incon, invalid
+  
+```
+
+
+```{r Table-D4-TestSubmitted}
+  
+  ## by role in last week, cumulative in last week and all time:
+    # total tests submitted
+    # unique IDs submitting (as prop of all IDs not previously positive)
+    # tests per unique ID
+
+```
+
+
+```{r Table-D5-Lab}
+
+  # total number tests submitted by lab, last week + current week, sparkline weekly average over time
+
+```
+
+
+```{r Figure-D5-Quar}
+
+  ## number in quarantine, colored by quar location, by day, all time
+
+```
+
+
+```{r Figure-D6-Quar-7day}
+
+  ## number in quarantine, colored by quar location, by day, last 7 days
+
+```
+
+
+```{r Figure-D7-Isol}
+  
+  ## number in isolation, colored by isolation location, by day, all time
+
+```
+
+
+```{r Figure-D8-Isol-7day}
+
+  ## number in isolation, colored by isolation location, by day, last 7 days
+
+```
+
+
+```{r Table-D6-DetailedTable}
+
+  # Cumulative cases, previous week cases, this week cases, % change this week
+    # Total
+    # by symptom status
+    # by role
+    # by age
+    # by race/ethnicity
+    # by sex at birth
+    # by dorm area
+    # by college
+
+```
+
+
+## SECTION E: CONCORD CAMPUS (LAW)
+
+```{r Table-E1-ManchCond}
+
+  # This Week value + Threshold Indicator, if applicable
+    # total active cases from last 10 days
+    # active cases per 1000 tested
+
+```
+
+
+```{r Figure-E1-EpiCurve}
+
+  ## epi curve, new positive, all time, by day, colored by role
+
+```
+
+
+```{r Figure-E2-EpiCurve-7day}
+
+  ## epi curve, new positive, last 7 days, by day, colored by role
+
+```
+
+
+```{r Figure-E3-TestSubmitted}
+  
+  ## by week, total tests submitted (including repeats), colored by role
+
+```
+
+
+```{r Figure-E4-PropPositive}
+
+  ## by week, # pos / (# pos + # neg)
+
+```
+
+
+```{r Table-E2-OnOffCampus}
+
+  # average number daily active cases among students, by dorm vs no dorm
+    # current week
+    # last week
+    # % change
+    # sparkline % change all time
+
+```
+
+
+```{r Table-E3-MostRecentLab}
+
+  ## by role + total, last seven days: most recent result positive, neg, incon, invalid
+  
+```
+
+
+```{r Table-E4-TestSubmitted}
+  
+  ## by role in last week, cumulative in last week and all time:
+    # total tests submitted
+    # unique IDs submitting (as prop of all IDs not previously positive)
+    # tests per unique ID
+
+```
+
+
+```{r Table-E5-Lab}
+
+  # total number tests submitted by lab, last week + current week, sparkline weekly average over time
+
+```
+
+
+```{r Figure-E5-Quar}
+
+  ## number in quarantine, colored by quar location, by day, all time
+
+```
+
+
+```{r Figure-E6-Quar-7day}
+
+  ## number in quarantine, colored by quar location, by day, last 7 days
+
+```
+
+
+```{r Figure-E7-Isol}
+  
+  ## number in isolation, colored by isolation location, by day, all time
+
+```
+
+
+```{r Figure-E8-Isol-7day}
+
+  ## number in isolation, colored by isolation location, by day, last 7 days
+
+```
+
+
+```{r Table-E6-DetailedTable}
+
+  # Cumulative cases, previous week cases, this week cases, % change this week
+    # Total
+    # by symptom status
+    # by role
+    # by age
+    # by race/ethnicity
+    # by sex at birth
+    # by dorm area
+    # by college
+
+```
+
