@@ -1,9 +1,16 @@
 ---
 title: "UNH Report"
-output: html_document
-params:
-  run_checks: TRUE
+output: 
+        html_document:
+                toc: true
+                toc_depth: 2
+        params:
+                run_checks: TRUE   
+            
+
 ---
+
+
 
 ```{r setup, include=FALSE}
   knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message = FALSE)
@@ -15,6 +22,9 @@ params:
   library(glue)
   library(colorspace)
 
+  
+  
+  
 ```
 
 ```{r data-load}
@@ -50,6 +60,7 @@ params:
 
 
 ```{r demo-checks, eval=run_checks}
+
 
   ## print out number of duplicate IDs, other aggregate information about the IDs
 
