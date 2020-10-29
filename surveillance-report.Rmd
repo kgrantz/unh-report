@@ -24,7 +24,7 @@ params:
   
 ```
 
-```{r data-load}
+```{r data-load, warning = TRUE}
 
   routinetesting <- read_csv("raw_data/routinetesting.csv") %>%
                     mutate(resultsdate = as.Date(resultsdate),
@@ -61,7 +61,6 @@ params:
 
 
 ```{r demo-checks, eval=params$run_checks}
-
   ## print out missingness in demographics
   summary(is.na(individualdemographics))
 
@@ -142,6 +141,30 @@ params:
   table(individualdemographics$age, individualdemographics$age_cat)
 
   ## numeric gender categories from `sex`
+  
+individualdemographics <- individualdemographics %>%
+                                mutate(gender=recode(sex,
+                                                     "Cisgender Man"="Assigned Male at Birth",
+                                                     "Cisgender Woman"="Assigned Female at Birth",
+                                                     "Male"="Assigned Male at Birth",
+                                                     "Female"="Assigned Female at Birth",
+                                                     "Transgender Man"= "Trans Man",
+                                                     "Transgender Woman"= "Trans Woman",
+                                                     "Gender Non-Conforming"= "Genderqueer/Non-binary (GNB)",
+                                                     "Gender Queer"="Genderqueer/Non-binary (GNB)",
+                                                     "Non-binary"= "Genderqueer/Non-binary (GNB)",
+                                                     "My identity is not listed"= "Not listed or prefer not to say",
+                                                     "Prefer not to say"="Not listed or prefer not to say"
+                                                     )) %>%
+                                mutate(gender=factor(gender,levels=c("Assigned Male at Birth",
+                                                                     "Assigned Female at Birth",
+                                                                     "Trans Man","Trans Woman",
+                                                                     "Genderqueer/Non-binary (GNB)",
+                                                                     "Not listed or prefer not to say" )))
+                                        
+  
+  
+  
   ## print out all possibilities
 				# replace gender = 0 if strpos(sex, "Cisgender Man")
 				# replace gender = 1 if strpos(sex, "Cisgender Woman")
