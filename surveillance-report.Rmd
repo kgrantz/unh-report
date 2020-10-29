@@ -24,7 +24,9 @@ params:
   
 ```
 
-```{r data-load, warning = TRUE}
+```{r data-load}
+
+#should we set warning=TRUE here to see parsing errors???? or is this potentially showing us data we arent allowed to see?
 
   routinetesting <- read_csv("raw_data/routinetesting.csv") %>%
                     mutate(resultsdate = as.Date(resultsdate),
@@ -141,7 +143,22 @@ params:
   table(individualdemographics$age, individualdemographics$age_cat)
 
   ## numeric gender categories from `sex`
-  
+   ## print out all possibilities
+				# replace gender = 0 if strpos(sex, "Cisgender Man")
+				# replace gender = 1 if strpos(sex, "Cisgender Woman")
+				# replace gender = 0 if strpos(sex, "Male")
+				# replace gender = 1 if strpos(sex, "Female")
+				# replace gender = 2 if strpos(sex, "Transgender Man")
+				# replace gender = 3 if strpos(sex, "Transgender Woman")
+				# replace gender = 4 if strpos(sex, "Gender Non-Conforming")
+				# replace gender = 4 if strpos(sex, "Gender Queer")
+				# replace gender = 4 if strpos(sex, "Non-binary")
+				# replace gender = 5 if strpos(sex, "My identity is not listed")
+				# replace gender = 5 if strpos(sex, "Prefer not to say")
+  ## table genders by sex
+  ## labels
+  			# label define sex_labl 0 "Assigned Male at Birth" 1 "Assigned Female at Birth" 2 "Trans Man" 3 "Trans Woman" 4 "Genderqueer/Non-binary (GNB)" 5 "Not listed or prefer not to say"
+
 individualdemographics <- individualdemographics %>%
                                 mutate(gender=recode(sex,
                                                      "Cisgender Man"="Assigned Male at Birth",
@@ -162,25 +179,6 @@ individualdemographics <- individualdemographics %>%
                                                                      "Genderqueer/Non-binary (GNB)",
                                                                      "Not listed or prefer not to say" )))
                                         
-  
-  
-  
-  ## print out all possibilities
-				# replace gender = 0 if strpos(sex, "Cisgender Man")
-				# replace gender = 1 if strpos(sex, "Cisgender Woman")
-				# replace gender = 0 if strpos(sex, "Male")
-				# replace gender = 1 if strpos(sex, "Female")
-				# replace gender = 2 if strpos(sex, "Transgender Man")
-				# replace gender = 3 if strpos(sex, "Transgender Woman")
-				# replace gender = 4 if strpos(sex, "Gender Non-Conforming")
-				# replace gender = 4 if strpos(sex, "Gender Queer")
-				# replace gender = 4 if strpos(sex, "Non-binary")
-				# replace gender = 5 if strpos(sex, "My identity is not listed")
-				# replace gender = 5 if strpos(sex, "Prefer not to say")
-  ## table genders by sex
-  ## labels
-  			# label define sex_labl 0 "Assigned Male at Birth" 1 "Assigned Female at Birth" 2 "Trans Man" 3 "Trans Woman" 4 "Genderqueer/Non-binary (GNB)" 5 "Not listed or prefer not to say"
-
 
   ## numeric campus indicator
   ## print out all possibilities
@@ -189,10 +187,19 @@ individualdemographics <- individualdemographics %>%
 				# replace campus1 = 1 if strpos(campus, "UNH Law")
 				# replace campus1 = 2 if strpos(campus, "UNH Manchester")
 				# replace campus1 = 3 if strpos(campus, "Other")
+
+individualdemographics <- individualdemographics %>%
+                                        mutate(campus1=recode(campus,
+                                                               "UNH LAW"="UNH Law"
+                                                               )) %>%
+                                        mutate(campus1=factor(campus1,
+                                                              levels = c("UNH Durham","UNH Law",
+                                                                         "UNH Manchester","Other")))
+
+
   ## tab new with old
   ## labels
   			# label define campus_labl 0 "Durham" 1 "Concord (Law)" 2 "Manchester" 3 "Other"
-
 
   ## numeric program result
   ## print out all possibilities
@@ -211,8 +218,75 @@ individualdemographics <- individualdemographics %>%
 			# label define college_labl 0 "Lib Arts" 1 "Business"	2 "Agriculture" 3 "Engineering" 4 "Health" 5 "Graduate School" 6 "Continuing Ed" 7 "Manchester" 8 "Law"	9 "Applied Sciences"
 
 
+individualdemographics <- individualdemographics %>%
+                                        mutate(college1=recode(college,
+                                                               "UNH-Manchester"="Manchester",
+                                                               "Continuing Education"="Continuing Ed",
+                                                               "Thompson School of Applied Sci"="Applied Sciences",
+                                                               "EngineeringAndPhysical Science"="Engineering" ))
   ## on/off campus levels
     ## 1 if no dorm listed
+
+#note the that no students are listed in the isolation and quarantine dorm:
+# https://www.unh.edu/housing/residence-halls
+# Adams Tower West and Babcock Hall are being utilized as UNH's isolation and quarantine dorms.
+# Adams Tower West has single rooms with ensuite bathrooms.
+# Babcock Hall offers single residence hall rooms with community bathrooms.
+# Students assigned to the Quarantine or Isolation Halls will be provided meals, snacks and beverages.
+
+individualdemographics <- individualdemographics %>%
+                                mutate(on_campus=ifelse(is.na(dorm),"Off Campus","On Campus")) %>%
+                                mutate(dorm_group=recode(dorm,
+                                                         "Alexander Hall"= "The Valley", 
+                                                         "Christensen Hall"= "The Timbers",
+                                                         "Congreve Hall"= "The Hills",
+                                                         "Devine Hall" = "Upper Quad",
+                                                         "Eaton House" = "The Minis",
+                                                         "Engelhardt Hall"="The Valley",
+                                                         "Fairchild Hall"="The Valley",
+                                                         "Gables North" = "Gables Apts",   
+                                                         "Gables South" = "Gables Apts",       
+                                                         "Gibbs Hall"= "The Valley",
+                                                         "Haaland Hall" = "The Timbers",
+                                                         "Hall House" = "The Minis",
+                                                         "Handler Hall"= "The Timbers",
+                                                         "Hetzel Hall" = "The Valley",
+                                                         "Hitchcock Hall"= "Upper Quad",
+                                                         "Hubbard Hall" = "The Timbers",
+                                                         "Hunter Hall" = "The Valley",
+                                                         "Jessie Doe Hall"="The Hills", 
+                                                         "Lord Hall"="The Hills",    
+                                                         "Marston House" = "The Minis",
+                                                         "Mclaughlin Hall"="The Hills",
+                                                         "Mills Hall"="The Valley",
+                                                         "Peterson Hall"="The Timbers",
+                                                         "Randall Hall" = "Upper Quad",
+                                                         "Richardson House" = "The Minis",
+                                                         "Sawyer Hall"="The Hills",
+                                                         "Scott Hall"="The Hills",
+                                                         "Stoke Hall"="The Hills",
+                                                         "The Gables - A" = "Gables Apts",
+                                                         "The Gables - B" = "Gables Apts",
+                                                         "The Gables - C" = "Gables Apts",
+                                                         "Williamson Hall"="The Timbers",
+                                                         "Woodside Apts. A" = "Woodside Apts",
+                                                         "Woodside Apts. B" = "Woodside Apts",
+                                                         "Woodside Apts. C" = "Woodside Apts",
+                                                         "Woodside Apts. D" = "Woodside Apts",
+                                                         "Woodside Apts. E" = "Woodside Apts",
+                                                         "Woodside Apts. F" = "Woodside Apts",
+                                                         "Woodside Apts. G" = "Woodside Apts",
+                                                         "Woodside Apts. H"= "Woodside Apts",
+                                                         "Woodside Apts. I"= "Woodside Apts",
+                                                         "Woodside Apts. J"= "Woodside Apts",
+                                                         "Woodside Apts. K"= "Woodside Apts",
+                                                         "Woodside Apts. L"= "Woodside Apts",
+                                                         "Woodside Apts. M"= "Woodside Apts",
+                                                         "Woodside Apts. N"= "Woodside Apts",
+                                                         "Woodside Apts. O"= "Woodside Apts",
+                                                         "Woodside Apts. P"= "Woodside Apts",
+                                                         "Woodside Apts. Q"= "Woodside Apts",
+                                                         "Woodside Apts. R"= "Woodside Apts"))
 
   
 	## Dormitories
