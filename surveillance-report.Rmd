@@ -108,11 +108,7 @@ params:
 ```{r demo-recoding, include=params$show_cleaning}
 
   ## numeric categorical for user_status
-  ## print out all possibilities
   ## 0, student; 1, faculty; 2, staff; 3, employee; 4, unknown
-  ## table roles by campus
-  ## role labels
-			# label define role_labl 0 "Student" 1 "Faculty" 2 "Staff" 3 "Employee" 4 "Contractor or Visitor"
   table(individualdemographics$user_status)
   individualdemographics <- individualdemographics %>%
                             mutate(user_status = tolower(user_status)) %>%
@@ -130,9 +126,6 @@ params:
   
   ## numeric age categories
   ## [15, 20), then 10y bins to 80+
-  ## table ages
-	## labels
-			# label define agecat_labl 1  "15-19" 2 "20-29" 3 "30-39" 4 "40-49" 5 "50-59" 6 "60-69" 7 "70-79" 8 "80+"
   table(individualdemographics$age)
   individualdemographics <- individualdemographics %>%
                             mutate(age_cat = cut(age, breaks=c(15, seq(20, 80, 10), 200), right = FALSE),
@@ -143,162 +136,163 @@ params:
   table(individualdemographics$age, individualdemographics$age_cat)
 
   ## numeric gender categories from `sex`
-   ## print out all possibilities
-				# replace gender = 0 if strpos(sex, "Cisgender Man")
-				# replace gender = 1 if strpos(sex, "Cisgender Woman")
-				# replace gender = 0 if strpos(sex, "Male")
-				# replace gender = 1 if strpos(sex, "Female")
-				# replace gender = 2 if strpos(sex, "Transgender Man")
-				# replace gender = 3 if strpos(sex, "Transgender Woman")
-				# replace gender = 4 if strpos(sex, "Gender Non-Conforming")
-				# replace gender = 4 if strpos(sex, "Gender Queer")
-				# replace gender = 4 if strpos(sex, "Non-binary")
-				# replace gender = 5 if strpos(sex, "My identity is not listed")
-				# replace gender = 5 if strpos(sex, "Prefer not to say")
-  ## table genders by sex
-  ## labels
-  			# label define sex_labl 0 "Assigned Male at Birth" 1 "Assigned Female at Birth" 2 "Trans Man" 3 "Trans Woman" 4 "Genderqueer/Non-binary (GNB)" 5 "Not listed or prefer not to say"
-
-individualdemographics <- individualdemographics %>%
-                                mutate(gender=recode(sex,
-                                                     "Cisgender Man"="Assigned Male at Birth",
-                                                     "Cisgender Woman"="Assigned Female at Birth",
-                                                     "Male"="Assigned Male at Birth",
-                                                     "Female"="Assigned Female at Birth",
-                                                     "Transgender Man"= "Trans Man",
-                                                     "Transgender Woman"= "Trans Woman",
-                                                     "Gender Non-Conforming"= "Genderqueer/Non-binary (GNB)",
-                                                     "Gender Queer"="Genderqueer/Non-binary (GNB)",
-                                                     "Non-binary"= "Genderqueer/Non-binary (GNB)",
-                                                     "My identity is not listed"= "Not listed or prefer not to say",
-                                                     "Prefer not to say"="Not listed or prefer not to say"
-                                                     )) %>%
-                                mutate(gender=factor(gender,levels=c("Assigned Male at Birth",
-                                                                     "Assigned Female at Birth",
-                                                                     "Trans Man","Trans Woman",
-                                                                     "Genderqueer/Non-binary (GNB)",
-                                                                     "Not listed or prefer not to say" )))
+  table(individualdemographics$sex)
+  individualdemographics <- individualdemographics %>%
+                            mutate(sex = tolower(sex)) %>%
+                            mutate(gender=recode(sex,
+                                                 "cisgender man"="Assigned Male at Birth",
+                                                 "cisgender woman"="Assigned Female at Birth",
+                                                 "male"="Assigned Male at Birth",
+                                                 "female"="Assigned Female at Birth",
+                                                 "transgender wan"= "Trans Man",
+                                                 "transgender woman"= "Trans Woman",
+                                                 "gender non-Conforming"= "Genderqueer/Non-binary (GNB)",
+                                                 "gender queer"="Genderqueer/Non-binary (GNB)",
+                                                 "non-binary"= "Genderqueer/Non-binary (GNB)",
+                                                 "my identity is not listed"= "Not listed or prefer not to say",
+                                                 "prefer not to say"="Not listed or prefer not to say"
+                                                 )) %>%
+                            mutate(gender=factor(gender,levels=c("Assigned Male at Birth",
+                                                                 "Assigned Female at Birth",
+                                                                 "Trans Man",
+                                                                 "Trans Woman",
+                                                                 "Genderqueer/Non-binary (GNB)",
+                                                                 "Not listed or prefer not to say"))) %>%
+                            mutate(gender_num = as.numeric(gender) - 1)
+    table(individualdemographics$sex, individualdemographics$gender)
+    table(individualdemographics$gender_num, individualdemographics$gender)
                                         
 
   ## numeric campus indicator
-  ## print out all possibilities
-				# replace campus1 = 0 if strpos(campus, "UNH Durham")
-				# replace campus1 = 1 if strpos(campus, "UNH LAW")
-				# replace campus1 = 1 if strpos(campus, "UNH Law")
-				# replace campus1 = 2 if strpos(campus, "UNH Manchester")
-				# replace campus1 = 3 if strpos(campus, "Other")
-
-individualdemographics <- individualdemographics %>%
-                                        mutate(campus1=recode(campus,
-                                                               "UNH LAW"="UNH Law"
-                                                               )) %>%
-                                        mutate(campus1=factor(campus1,
-                                                              levels = c("UNH Durham","UNH Law",
-                                                                         "UNH Manchester","Other")))
-
-
-  ## tab new with old
-  ## labels
-  			# label define campus_labl 0 "Durham" 1 "Concord (Law)" 2 "Manchester" 3 "Other"
+  ## 0 "Durham"; 1 "Concord (Law)"; 2 "Manchester"; 3 "Other"
+  table(individualdemographics$campus)
+  individualdemographics <- individualdemographics %>%
+                            mutate(campus = tolower(campus)) %>%
+                            mutate(campus_num=recode(campus,
+                                                 "unh durham" = 0,
+                                                 "unh law"= 1,
+                                                 "unh manchester" = 2,
+                                                 "other" = 3)) %>%
+                            mutate(campus_fac=factor(campus_num,
+                                                     levels = 0:3,
+                                                     labels = c("UNH Durham","UNH Law","UNH Manchester","Other")),
+                                   campus_num=as.numeric(campus_fac)-1)
+  table(individualdemographics$campus, individualdemographics$campus_fac)
+  table(individualdemographics$campus_num, individualdemographics$campus_fac)
 
   ## numeric program result
-  ## print out all possibilities
-				# replace college1 = 0 if strpos(college, "Liberal Arts")
-				# replace college1 = 1 if strpos(college, "Business")
-				# replace college1 = 2 if strpos(college, "Life Sciences And Ag")
-				# replace college1 = 3 if strpos(college, "Engineering")
-				# replace college1 = 4 if strpos(college, "Health And Human")
-				# replace college1 = 5 if strpos(college, "Graduate School")
-				# replace college1 = 6 if strpos(college, "Continuing Education")
-				# replace college1 = 7 if strpos(college, "UNH")
-				# replace college1 = 8 if strpos(college, "Law")
-				# replace college1 = 9 if strpos(college, "Thompson School of")
-  ## tab new with old
-  ## labels
-			# label define college_labl 0 "Lib Arts" 1 "Business"	2 "Agriculture" 3 "Engineering" 4 "Health" 5 "Graduate School" 6 "Continuing Ed" 7 "Manchester" 8 "Law"	9 "Applied Sciences"
-
-
-individualdemographics <- individualdemographics %>%
-                                        mutate(college1=recode(college,
-                                                               "UNH-Manchester"="Manchester",
-                                                               "Continuing Education"="Continuing Ed",
-                                                               "Thompson School of Applied Sci"="Applied Sciences",
-                                                               "EngineeringAndPhysical Science"="Engineering" ))
-  ## on/off campus levels
-    ## 1 if no dorm listed
-
-#note the that no students are listed in the isolation and quarantine dorm:
-# https://www.unh.edu/housing/residence-halls
-# Adams Tower West and Babcock Hall are being utilized as UNH's isolation and quarantine dorms.
-# Adams Tower West has single rooms with ensuite bathrooms.
-# Babcock Hall offers single residence hall rooms with community bathrooms.
-# Students assigned to the Quarantine or Isolation Halls will be provided meals, snacks and beverages.
-
-individualdemographics <- individualdemographics %>%
-                                mutate(on_campus=ifelse(is.na(dorm),"Off Campus","On Campus")) %>%
-                                mutate(dorm_group=recode(dorm,
-                                                         "Alexander Hall"= "The Valley", 
-                                                         "Christensen Hall"= "The Timbers",
-                                                         "Congreve Hall"= "The Hills",
-                                                         "Devine Hall" = "Upper Quad",
-                                                         "Eaton House" = "The Minis",
-                                                         "Engelhardt Hall"="The Valley",
-                                                         "Fairchild Hall"="The Valley",
-                                                         "Gables North" = "Gables Apts",   
-                                                         "Gables South" = "Gables Apts",       
-                                                         "Gibbs Hall"= "The Valley",
-                                                         "Haaland Hall" = "The Timbers",
-                                                         "Hall House" = "The Minis",
-                                                         "Handler Hall"= "The Timbers",
-                                                         "Hetzel Hall" = "The Valley",
-                                                         "Hitchcock Hall"= "Upper Quad",
-                                                         "Hubbard Hall" = "The Timbers",
-                                                         "Hunter Hall" = "The Valley",
-                                                         "Jessie Doe Hall"="The Hills", 
-                                                         "Lord Hall"="The Hills",    
-                                                         "Marston House" = "The Minis",
-                                                         "Mclaughlin Hall"="The Hills",
-                                                         "Mills Hall"="The Valley",
-                                                         "Peterson Hall"="The Timbers",
-                                                         "Randall Hall" = "Upper Quad",
-                                                         "Richardson House" = "The Minis",
-                                                         "Sawyer Hall"="The Hills",
-                                                         "Scott Hall"="The Hills",
-                                                         "Stoke Hall"="The Hills",
-                                                         "The Gables - A" = "Gables Apts",
-                                                         "The Gables - B" = "Gables Apts",
-                                                         "The Gables - C" = "Gables Apts",
-                                                         "Williamson Hall"="The Timbers",
-                                                         "Woodside Apts. A" = "Woodside Apts",
-                                                         "Woodside Apts. B" = "Woodside Apts",
-                                                         "Woodside Apts. C" = "Woodside Apts",
-                                                         "Woodside Apts. D" = "Woodside Apts",
-                                                         "Woodside Apts. E" = "Woodside Apts",
-                                                         "Woodside Apts. F" = "Woodside Apts",
-                                                         "Woodside Apts. G" = "Woodside Apts",
-                                                         "Woodside Apts. H"= "Woodside Apts",
-                                                         "Woodside Apts. I"= "Woodside Apts",
-                                                         "Woodside Apts. J"= "Woodside Apts",
-                                                         "Woodside Apts. K"= "Woodside Apts",
-                                                         "Woodside Apts. L"= "Woodside Apts",
-                                                         "Woodside Apts. M"= "Woodside Apts",
-                                                         "Woodside Apts. N"= "Woodside Apts",
-                                                         "Woodside Apts. O"= "Woodside Apts",
-                                                         "Woodside Apts. P"= "Woodside Apts",
-                                                         "Woodside Apts. Q"= "Woodside Apts",
-                                                         "Woodside Apts. R"= "Woodside Apts"))
+	## 0 "Lib Arts"; 1 "Business";	2 "Agriculture"; 3 "Engineering"; 4 "Health"; 5 "Graduate School";
+  ## 6 "Continuing Ed"; 7 "Manchester"; 8 "Law";	9 "Applied Sciences"
+  table(individualdemographics$college)
+  individualdemographics <- individualdemographics %>%
+                            mutate(college_num = tolower(college),
+                                   college_num = str_replace(college_num, ".*liberal arts.*", "0"),
+                                   college_num = str_replace(college_num, ".*business.*", "1"),
+                                   college_num = str_replace(college_num, ".*life science.*", "2"),
+                                   college_num = str_replace(college_num, ".*engineer.*", "3"),
+                                   college_num = str_replace(college_num, ".*health.*", "4"),
+                                   college_num = str_replace(college_num, ".*graduate.*", "5"),
+                                   college_num = str_replace(college_num, ".*continuing.*", "6"),
+                                   college_num = str_replace(college_num, ".*manchester.*", "7"),
+                                   college_num = str_replace(college_num, ".*law.*", "8"),
+                                   college_num = str_replace(college_num, ".*applied.*", "9"),
+                                   college_num = str_replace(college_num, ".*designated.*", "10")) %>%
+                            mutate(college_num = as.numeric(college_num)) %>%
+                            mutate(college_fac = factor(college_num,
+                                                        levels = 0:10,
+                                                        labels = c("Liberal Arts",
+                                                                   "Business",
+                                                                   "Agriculture",
+                                                                   "Engineering",
+                                                                   "Health",
+                                                                   "Graduate School",
+                                                                   "Continuing Ed",
+                                                                   "Manchester",
+                                                                   "Law",
+                                                                   "Applied Sciences",
+                                                                   "No college designated")))
+  table(individualdemographics$college, individualdemographics$college_fac)
+  table(individualdemographics$college_num, individualdemographics$college_fac)
 
   
-	## Dormitories
-  ## print out possibilities
-				# replace dormarea = 0 if strpos(dorm, "Congreve") | strpos(dorm, "Jessie") | strpos(dorm, "Lord") | strpos(dorm, "Mclaughlin") | strpos(dorm, "Sawyer") | strpos(dorm, "Scott") | strpos(dorm, "Stoke")
-				# replace dormarea = 1 if strpos(dorm,"Alexander") 	| strpos(dorm,"Engelhardt") 	| strpos(dorm,"Fairchild") 	| strpos(dorm,"Gibbs") 	| strpos(dorm,"Hetzel") 	| strpos(dorm,"Hunter") 	| strpos(dorm,"Mills") 	| strpos(dorm,"Devine") 	| strpos(dorm,"Hitchcock") 	| strpos(dorm,"Randall") 
-				# replace dormarea = 2 if strpos(dorm,"Christensen") 	| strpos(dorm,"Haaland") 	| strpos(dorm,"Handler") 	| strpos(dorm,"Hubbard") 	| strpos(dorm,"Peterson") 	| strpos(dorm,"Eaton") 	| strpos(dorm,"Hall House") 	| strpos(dorm,"Marston") 	| strpos(dorm,"Richardson") 	| strpos(dorm,"Williamson") 
-				# replace dormarea = 3 if strpos(dorm, "Woodside")
-				# replace dormarea = 4 if strpos(dorm, "Gables") 
-  ## tab new with old
-	## labels
-			# label define dormarea_labl 0 "Hills" 1 "Valley" 2 "Timbers" 3 "Woodside Apts" 4 "Gables Apts"
+  ## dorimtory + on/off campus levels
+  ## On/Off: 1 if no dorm listed
+  ## Dorm: 0 "Hills" 1 "Valley" 2 "Timbers" 3 "Woodside Apts" 4 "Gables Apts"
+      # note the that no students are listed in the isolation and quarantine dorm:
+      # https://www.unh.edu/housing/residence-halls
+      # Adams Tower West and Babcock Hall are being utilized as UNH's isolation and quarantine dorms.
+      # Adams Tower West has single rooms with ensuite bathrooms.
+      # Babcock Hall offers single residence hall rooms with community bathrooms.
+      # Students assigned to the Quarantine or Isolation Halls will be provided meals, snacks and beverages.
+
+  table(individualdemographics$dorm)
+  individualdemographics <- individualdemographics %>%
+                            mutate(off_campus_num=ifelse(is.na(dorm), 1, 0),
+                                   off_campus_fac = factor(off_campus_num,
+                                                          levels = 0:1,
+                                                          labels = c("On Campus", "Off Campus"))) %>%
+                            mutate(dorm_group=recode(dorm,
+                                                     "Alexander Hall"= "The Valley", 
+                                                     "Christensen Hall"= "The Timbers",
+                                                     "Congreve Hall"= "The Hills",
+                                                     "Devine Hall" = "Upper Quad",
+                                                     "Eaton House" = "The Minis",
+                                                     "Engelhardt Hall"="The Valley",
+                                                     "Fairchild Hall"="The Valley",
+                                                     "Gables North" = "Gables Apts",   
+                                                     "Gables South" = "Gables Apts",       
+                                                     "Gibbs Hall"= "The Valley",
+                                                     "Haaland Hall" = "The Timbers",
+                                                     "Hall House" = "The Minis",
+                                                     "Handler Hall"= "The Timbers",
+                                                     "Hetzel Hall" = "The Valley",
+                                                     "Hitchcock Hall"= "Upper Quad",
+                                                     "Hubbard Hall" = "The Timbers",
+                                                     "Hunter Hall" = "The Valley",
+                                                     "Jessie Doe Hall"="The Hills", 
+                                                     "Lord Hall"="The Hills",    
+                                                     "Marston House" = "The Minis",
+                                                     "Mclaughlin Hall"="The Hills",
+                                                     "Mills Hall"="The Valley",
+                                                     "Peterson Hall"="The Timbers",
+                                                     "Randall Hall" = "Upper Quad",
+                                                     "Richardson House" = "The Minis",
+                                                     "Sawyer Hall"="The Hills",
+                                                     "Scott Hall"="The Hills",
+                                                     "Stoke Hall"="The Hills",
+                                                     "The Gables - A" = "Gables Apts",
+                                                     "The Gables - B" = "Gables Apts",
+                                                     "The Gables - C" = "Gables Apts",
+                                                     "Williamson Hall"="The Timbers",
+                                                     "Woodside Apts. A" = "Woodside Apts",
+                                                     "Woodside Apts. B" = "Woodside Apts",
+                                                     "Woodside Apts. C" = "Woodside Apts",
+                                                     "Woodside Apts. D" = "Woodside Apts",
+                                                     "Woodside Apts. E" = "Woodside Apts",
+                                                     "Woodside Apts. F" = "Woodside Apts",
+                                                     "Woodside Apts. G" = "Woodside Apts",
+                                                     "Woodside Apts. H"= "Woodside Apts",
+                                                     "Woodside Apts. I"= "Woodside Apts",
+                                                     "Woodside Apts. J"= "Woodside Apts",
+                                                     "Woodside Apts. K"= "Woodside Apts",
+                                                     "Woodside Apts. L"= "Woodside Apts",
+                                                     "Woodside Apts. M"= "Woodside Apts",
+                                                     "Woodside Apts. N"= "Woodside Apts",
+                                                     "Woodside Apts. O"= "Woodside Apts",
+                                                     "Woodside Apts. P"= "Woodside Apts",
+                                                     "Woodside Apts. Q"= "Woodside Apts",
+                                                     "Woodside Apts. R"= "Woodside Apts")) %>%
+                            mutate(dorm_group_num = recode(dorm_group,
+                                                           "The Hills" = 0,
+                                                           "The Valley" = 1,
+                                                           "The Timbers" = 2,
+                                                           "Woodside Apts" = 3,
+                                                           "Gables Apts" = 4),
+                                   dorm_group = as.factor(dorm_group))
+  table(individualdemographics$dorm, individualdemographics$off_campus_num)
+  table(individualdemographics$off_campus_fac, individualdemographics$off_campus_num)
+  table(individualdemographics$dorm, individualdemographics$dorm_group)
+  table(individualdemographics$dorm_group_num, individualdemographics$dorm_group)
 
 ```
 
@@ -343,9 +337,37 @@ individualdemographics <- individualdemographics %>%
 ```
 
 
+```{r isolation-recoding, include=params$show_cleaning}
+
+  ## Recoding dates, date-times
+  isolationquarantine <- isolationquarantine %>%
+                         mutate(quar_entrydttm = as.POSIXct(quar_entrydate),
+                                quar_exitdttm = as.POSIXct(quar_exitdate),
+                                quar_exposuredttm = as.POSIXct(quar_exposuredate),
+                                iso_entrydttm = as.POSIXct(iso_entrydate),
+                                iso_exitdttm = as.POSIXct(iso_exitdate),
+                                quar_entrydate = as.Date(quar_entrydate),
+                                quar_exitdate = as.Date(quar_exitdate),
+                                quar_exposuredate = as.Date(quar_exposuredate),
+                                iso_entrydate = as.Date(iso_entrydate),
+                                iso_exitdate = as.Date(iso_exitdate),
+                                notifydttm = as.POSIXct(notifydate),
+                                notifydate = as.Date(notifydate))
+
+  ## Recoding location
+  table(isolationquarantine$location)
+  table(isolationquarantine$dorm)
+  isolationquarantine <- isolationquarantine %>%
+                         mutate(quar_isol_bed = ifelse(location=="Campus", 1, 0)) %>%
+                         rename(dorm_isol = dorm)
+  
+```
+
 ```{r demo-isolation-merge}
 
   ## merge the isolation and demographics datasets
+  demo_isol <- isolationquarantine %>%
+               left_join(individualdemographics, by="uid")
 
 ```
 
@@ -353,12 +375,65 @@ individualdemographics <- individualdemographics %>%
 ```{r demo-isolation-checks, eval=params$run_checks}
 
   ## how many isolation/quar events don't have demo data?
+  summary(is.na(demo_isol))
+  
+  ## how many listed more than once?
+  demo_isol %>%
+    mutate(quar_ind = ifelse(is.na(quar_entrydate), 0, 1),
+           isol_ind = ifelse(is.na(iso_entrydate), 0, 1)) %>%
+    group_by(uid) %>%
+    summarise(n = n(),
+              n_quar = sum(quar_ind),
+              n_isol = sum(isol_ind)) %>%
+    ungroup() %>%
+    summarise(n_quar_morethanonce = sum(n_quar>1, na.rm=TRUE),
+              n_quar_morethantwice = sum(n_quar>2, na.rm = TRUE),
+              n_isol_morethanonce = sum(n_isol>1, na.rm=TRUE),
+              n_quar_and_isol = sum(n_isol>0 & n_quar>0, na.rm = TRUE))
   
   ## any overlapping quarantine periods?
-  ## any overlapping isolation periods?
+  demo_isol %>%
+    group_by(uid) %>%
+    filter(sum(!is.na(quar_entrydate)) > 1) %>%
+    arrange(uid, quar_entrydate) %>%
+    mutate(prev_quarexit = lag(quar_exitdate)) %>%
+    mutate(overlap = ifelse(prev_quarexit > quar_entrydate, 1, 0)) %>%
+    ungroup() %>%
+    filter(overlap==1) %>%
+    group_by(campus, user_status) %>%
+    summarise(n_overlapping_quar = n())
+    
 
 ```
 
+```{r isol-duplicates}
+  
+  ## remove duplicate/overlapping quarantines if they still exist
+  ## favor entries that have complete notification date, location, isolation dorm
+  ## first, find the IDs that have overlapping quarantine periods + the two overlapping entries
+  ## then select the one to remove
+
+  demo_isol <- demo_isol %>%
+               mutate(ind = 1:n())
+
+  to_rm <- demo_isol %>%
+           group_by(uid) %>%
+           filter(sum(!is.na(quar_entrydate)) > 1) %>%
+           arrange(uid, quar_entrydate) %>%
+           mutate(prev_quarexit = lag(quar_exitdate)) %>%
+           mutate(overlap = ifelse(prev_quarexit > quar_entrydate, 1, 0)) %>%
+           mutate(overlap = max(overlap, na.rm = TRUE)) %>%
+           filter(overlap == 1) %>%
+           mutate(n_missing = sum(is.na(c(notifydate, location)), na.rm=TRUE)) %>%
+           arrange(desc(n_missing)) %>%
+           mutate(n = 1:n()) %>%
+           ungroup() %>%
+           filter(n==1)
+  
+  demo_isol <- demo_isol %>%
+               filter(!(ind %in% to_rm$ind))
+        
+```
 
 ```{r demo-testing-long-cleaning, include=params$show_cleaning}
 
