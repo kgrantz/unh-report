@@ -21,6 +21,7 @@ params:
   library(tidyverse)
   library(glue)
   library(colorspace)
+  library(flextable)
   
 ```
 
@@ -443,39 +444,45 @@ params:
                          labeltime = collecttime)
 
   ## numeric test result
-  ## print out all possibilities
-				# replace result1 = 0 if strpos(result, "Negative")
-				# replace result1 = 1 if strpos(result, "Positive")
-				# replace result1 = 2 if strpos(result, "Inconclusive")
-				# replace result1 = 3 if strpos(result, "Invalid")
-				# replace result1 = 3 if strpos(result, "Rejected")
-				# replace result1 = 3 if strpos(result, "No Result")
-				# replace result1 = 3 if strpos(result, "I got tested on")
-				# replace result1 = 3 if strpos(result, "Still haven")
-				# replace result1 = 3 if strpos(result, "Test Not Performed")
-				# replace result1 = 1 if strpos(result, "Positive Provided Letter")
-				# replace result1 = 3 if strpos(result, "received from school yet")
-  ## tab new with old
-  ## labels
-			# label define result_labl 0 "Neg" 1 "Pos" 2 "Inconclusive" 3 "Invalid/Rejected/No Result"
+	## 0 "Neg"; 1 "Pos"; 2 "Inconclusive"; 3 "Invalid/Rejected/No Result"
+  table(tolower(demo_testing$result))
+  demo_testing <- demo_testing %>%
+                  mutate(result = tolower(result)) %>%
+                  mutate(result_num = recode(result,
+                                             "negative" = 0,
+                                             "positive" = 1,
+                                             "test was positive provided letter to be on campus" = 1,
+                                             "inconclusive" = 2,
+                                             .default = 3)) %>%
+                  mutate(result_fac = factor(result_num,
+                                             levels = 0:3,
+                                             labels = c("Negative", "Positive", "Inconclusive", "Invalid/Rejected/No Result")))
+  table(demo_testing$result, demo_testing$result_num)
+  table(demo_testing$result_fac, demo_testing$result_num)
 
 	## recode dates
-			# gen testdate = labeldate
-			# replace testdate = resultsdate if resultsdate != .
-
+  ## uses resultsdate, unless missing, then uses labeldate
+  demo_testing <- demo_testing %>%
+                  mutate(testdate = ifelse(is.na(resultsdate), labeldate, resultsdate))
 
   ## numeric laboratory indicator
-  ## print out possibilities
-				# replace laboratory1 = 0 if strpos(laboratory, "Sequoia")
-				# replace laboratory1 = 1 if strpos(laboratory, "CMD")
-				# replace laboratory1 = 2 if strpos(laboratory, "HealthWellness")
-				# replace laboratory1 = 3 if strpos(laboratory, "PreArrival")
-				# replace laboratory1 = 4 if strpos(laboratory, "Quest") 
-				# replace laboratory1 = 5 if strpos(laboratory, "UNHLab_Temp") 
-  ## tab new with old
-  ## laboratory labels
-			# label define lab_labl 0 "Sequoia" 1 "Convenient MD" 2 "Health & Wellness" 3 "Pre-Arrival" 4 "Quest" 5 "Temp UNH Lab"
-			
+  ## 0 "Sequoia"; 1 "Convenient MD"; 2 "Health & Wellness"; 3 "Pre-Arrival"; 4 "Quest"; 5 "Temp UNH Lab"
+	table(tolower(demo_testing$laboratory))
+  demo_testing <- demo_testing %>%
+                  mutate(laboratory = tolower(laboratory)) %>%
+                  mutate(laboratory_num = recode(laboratory,
+                                             "sequoia" = 0,
+                                             "cmd" = 1,
+                                             "healthwellnesslab" = 2,
+                                             "prearrival" = 3,
+                                             "quest" = 4,
+                                             "unhlab_temp" = 5)) %>%
+                  mutate(laboratory_fac = factor(laboratory_num,
+                                             levels = 0:5,
+                                             labels = c("Sequoia", "Convenient MD", "Health + Wellness", "Pre-Arrival", "Quest", "UNH Temp.")))
+  table(demo_testing$laboratory, demo_testing$laboratory_num)
+  table(demo_testing$laboratory_fac, demo_testing$laboratory_num)
+  
   ## binary test result indicators in long data - pos, neg, incon, invalid
 			# replace pos = 1 if result == 1
 			# replace neg = 1 if result == 0
