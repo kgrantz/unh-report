@@ -32,7 +32,8 @@ params:
   routinetesting <- read_csv("raw_data/routinetesting.csv") %>%
                     mutate(resultsdate = as.Date(resultsdate),
                            collectdate = as.Date(collectdate),
-                           onsetdate = as.Date(onsetdate))
+                           onsetdate = as.Date(onsetdate)) %>%
+                    mutate(sample_id_gen=1:nrow(.))
 
   isolationquarantine <- read_csv("raw_data/isolationquarantine.csv")
 
@@ -498,13 +499,25 @@ params:
     ## for each positive test result, check if there is another positive test result in the next 10 days
     ## QUESTION: if there is -- create 'first positive' indicator that should be used for epi curves, etc?
 
+#for now: just remove the any duplicate cases, take the first one with the most recent results date
+doublecounted <- demo_testing %>% filter(result_fac=="Positive")  %>%
+                arrange(resultsdate)%>%
+                filter(duplicated(uid)==TRUE)
 
+#print the number of individuals showing up positive multiple times
+nrow(doublecounted)
+
+
+cases <- demo_testing %>% filter(result_fac=="Positive") %>%
+                filter(!(sample_id_gen %in% doublecounted$sample_id_gen))
+  
+  
 ```
 
 
 ```{r demo-testing-wide}
 
-  ## by UID, add a sample number
+  ## by UID, add a sample number # Forrest: already generated this before, see the variable sample_id_gen
   ## then make wide dataset by ID
 
 
@@ -584,12 +597,41 @@ params:
 
   ## epi curve, new positive, all time, by day, colored by campus
 
+epicurv_df1 <- cases %>% group_by(labeldate,campus)%>%
+                summarize(cases=n())
+
+max_ecdf1 <- ceiling(max(epicurv_df$cases)/2)*2
+
+epicurv_df1%>%
+        ggplot(aes(x=labeldate,y=cases,fill=campus))+
+        geom_col()+
+        theme_bw()+
+        scale_fill_brewer("Campus",type = "qual")+
+        scale_y_continuous(breaks=c(0,max_ecdf/2,max_ecdf),limits=c(0,max_ecdf))+
+        ylab("Cases")
+        
+
+
 ```
 
 
 ```{r Figure-B2-EpiCurve-7day}
 
-  ## epi curve, new positive, last 7 days, by day, colored by campus
+epicurv_df2 <- cases %>% filter(labeldate>(Sys.Date()-7))%>%
+                group_by(labeldate,campus)%>%
+                summarize(cases=n())
+
+max_ecdf2 <- ceiling(max(epicurv_df2$cases)/2)*2
+
+epicurv_df2%>%
+        ggplot(aes(x=labeldate,y=cases,fill=campus))+
+        geom_col()+
+        theme_bw()+
+        scale_fill_brewer("Campus",type = "qual")+
+        scale_y_continuous(breaks=c(0,max_ecdf2/2,max_ecdf2),limits=c(0,max_ecdf2))+
+        ylab("Cases")
+        
+        
 
 ```
 
