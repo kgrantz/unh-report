@@ -417,7 +417,6 @@ params:
     filter(overlap==1) %>%
     group_by(campus, user_status) %>%
     summarise(n_overlapping_quar = n())
-    
 
 ```
 
@@ -448,6 +447,65 @@ params:
   demo_isol <- demo_isol %>%
                filter(!(ind %in% to_rm$ind))
         
+```
+
+```{r isol-reformat, echo=params$run_checks}
+
+  ## create df of only quarantine events
+  demo_quar <- demo_isol %>%
+               filter(!is.na(quar_entrydate))
+
+  ## any weird dates?
+  reasonable_dates <- as.Date(as.Date("2020-01-01"):as.Date("2021-01-01"), origin="1970-01-01")
+  demo_quar %>%
+    filter(!(quar_entrydate %in% reasonable_dates) | !(quar_exitdate %in% reasonable_dates)) %>%
+    group_by(campus_fac, user_status_fac) %>%
+    summarise(n_weird_quar_dates=n())
+
+  ## TO DO: for now, filtering out those weird dates
+  demo_quar <- demo_quar %>%
+               filter((quar_entrydate %in% reasonable_dates) & (quar_exitdate %in% reasonable_dates))
+  
+  ## create df of only isolation events
+  ## checks whether dates are reasonable
+  ## filters to only include those reasonable events
+  demo_isol <- demo_isol %>%
+               filter(!is.na(iso_entrydate))
+  
+  demo_isol %>%
+    filter(!(iso_entrydate %in% reasonable_dates) | !(iso_exitdate %in% reasonable_dates)) %>%
+    group_by(campus_fac, user_status_fac) %>%
+    summarise(n_weird_isol_dates=n())
+
+  demo_isol <- demo_isol %>%
+               filter((iso_entrydate %in% reasonable_dates) & (iso_exitdate %in% reasonable_dates))
+  
+  
+  ## create long quarantine dataset (1 row per ID, per day in quarantine)
+  ## TO DO: this imputes any missing exit dates with the report_date
+  demo_quar_long <- demo_quar %>%
+                    replace_na(list(quar_exitdate = report_date)) %>%
+                    rowwise() %>% 
+                    do(data.frame(date = .$quar_entrydate:.$quar_exitdate,
+                                  uid = .$uid,
+                                  location = .$location,
+                                  dorm_isol = .$dorm_isol,
+                                  quar_isol_bed = .$quar_isol_bed,
+                                  campus_fac = .$campus_fac,
+                                  off_campus_fac = .$off_campus_fac,
+                                  user_status_fac = .$user_status_fac))
+  
+  demo_isol_long <- demo_isol %>%
+                    replace_na(list(iso_exitdate = report_date)) %>%
+                    rowwise() %>% 
+                    do(data.frame(date = .$iso_entrydate:.$iso_exitdate,
+                                  uid = .$uid,
+                                  location = .$location,
+                                  dorm_isol = .$dorm_isol,
+                                  quar_isol_bed = .$quar_isol_bed,
+                                  campus_fac = .$campus_fac,
+                                  off_campus_fac = .$off_campus_fac,
+                                  user_status_fac = .$user_status_fac))
 ```
 
 ```{r demo-testing-long-cleaning, include=params$show_cleaning}
