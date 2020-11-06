@@ -719,37 +719,43 @@ params:
   ts_quar_role <- demo_quar_long %>%
                   group_by(date, campus_fac, user_status_fac) %>%
                   summarize(n = n_distinct(uid)) %>%
-                  ungroup()
+                  ungroup() %>%
+                  mutate(date = as.Date(date, origin="1970-01-01"))
 
   ## data frame: number in quarantine by location (on/off campus), bed status, campus, testdate
   ts_quar_offcamp <- demo_quar_long %>%
                      group_by(date, campus_fac, location, quar_isol_bed) %>%
                      summarize(n = n_distinct(uid)) %>%
-                     ungroup()
+                     ungroup() %>%
+                     mutate(date = as.Date(date, origin="1970-01-01"))
 
   ## data frame: number in quarantine by campus, testdate
   ts_quar_campus <- demo_quar_long %>%
                     group_by(date, campus_fac) %>%
                     summarize(n = n_distinct(uid)) %>%
-                    ungroup()
+                    ungroup() %>%
+                    mutate(date = as.Date(date, origin="1970-01-01"))
   
   ## data frame: number in isolation by campus, role, testdate
   ts_isol_role <- demo_isol_long %>%
                   group_by(date, campus_fac, user_status_fac) %>%
                   summarize(n = n_distinct(uid)) %>%
-                  ungroup()
+                  ungroup() %>%
+                  mutate(date = as.Date(date, origin="1970-01-01"))
 
   ## data frame: number in isolation by location (on/off campus), bed status, campus, testdate
   ts_isol_offcamp <- demo_isol_long %>%
                      group_by(date, campus_fac, location, quar_isol_bed) %>%
                      summarize(n = n_distinct(uid)) %>%
-                     ungroup()
+                     ungroup() %>%
+                     mutate(date = as.Date(date, origin="1970-01-01"))
 
   ## data frame: number in isolation by campus, testdate
   ts_isol_campus <- demo_isol_long %>%
                     group_by(date, campus_fac) %>%
                     summarize(n = n_distinct(uid)) %>%
-                    ungroup()
+                    ungroup() %>%
+                    mutate(date = as.Date(date, origin="1970-01-01"))
   
 
 ```
