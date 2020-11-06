@@ -9,6 +9,7 @@ params:
   run_checks: TRUE # whether to run and print out basic data checks
   show_cleaning: TRUE # whether to print out basic info about data cleaning steps
   report_date: "2020-10-12" # date in YYYY-MM-DD
+  state_conditions: "Limited Open"
 ---
 
 
@@ -22,18 +23,30 @@ params:
   library(glue)
   library(colorspace)
   library(flextable)
+  library(lubridate)
+  library(rvest)
+  library(scales)
+  
+  pick_color_threshold <- function(value, 
+                                   thresholds, 
+                                   colors=c("#8bcca3", "#f0e37f", "#e6b367", "#de6e66")){
+  return(colors[max(which(value > thresholds))])
+  }
+  
+  pick_color_threshold_str <- function(value, 
+                                       thresholds, 
+                                       strings=c("Green", "Yellow", "Orange", "Red")){
+  return(strings[max(which(value > thresholds))])
+  }
   
 ```
 
-```{r data-load}
-
-#should we set warning=TRUE here to see parsing errors???? or is this potentially showing us data we arent allowed to see?
+```{r data-load, warning = params$run_checks}
 
   routinetesting <- read_csv("raw_data/routinetesting.csv") %>%
                     mutate(resultsdate = as.Date(resultsdate),
                            collectdate = as.Date(collectdate),
-                           onsetdate = as.Date(onsetdate)) %>%
-                    mutate(sample_id_gen=1:nrow(.))
+                           onsetdate = as.Date(onsetdate))
 
   isolationquarantine <- read_csv("raw_data/isolationquarantine.csv")
 
@@ -464,7 +477,8 @@ params:
 	## recode dates
   ## uses resultsdate, unless missing, then uses labeldate
   demo_testing <- demo_testing %>%
-                  mutate(testdate = ifelse(is.na(resultsdate), labeldate, resultsdate))
+                  mutate(testdate = ifelse(is.na(resultsdate), labeldate, resultsdate)) %>%
+                  mutate(testdate = as.Date(testdate, origin="1970-01-01"))
 
   ## numeric laboratory indicator
   ## 0 "Sequoia"; 1 "Convenient MD"; 2 "Health & Wellness"; 3 "Pre-Arrival"; 4 "Quest"; 5 "Temp UNH Lab"
@@ -485,57 +499,92 @@ params:
   table(demo_testing$laboratory_fac, demo_testing$laboratory_num)
   
   ## binary test result indicators in long data - pos, neg, incon, invalid
-			# replace pos = 1 if result == 1
-			# replace neg = 1 if result == 0
-			# replace incon = 1 if result == 2
-			# replace invalid = 1 if result == 3
-	## labels yes/no
-
+  demo_testing <- demo_testing %>%
+                  mutate(pos = ifelse(result_num == 1, 1, 0),
+                         neg = ifelse(result_num == 0, 1, 0),
+                         incon = ifelse(result_num == 2, 1, 0),
+                         invalid = ifelse(result_num == 3, 1, 0))
 
   ## remove duplicate test results (labeldate, resultsdate, result, laboratory)
-
+  demo_testing <- demo_testing %>%
+                  distinct_at(vars(uid, testdate, result, laboratory), .keep_all = TRUE)
 
   ## make sure those positive once do not have positive counted more than once
     ## for each positive test result, check if there is another positive test result in the next 10 days
-    ## QUESTION: if there is -- create 'first positive' indicator that should be used for epi curves, etc?
-
-#for now: just remove the any duplicate cases, take the first one with the most recent results date
-doublecounted <- demo_testing %>% filter(result_fac=="Positive")  %>%
-                arrange(resultsdate)%>%
-                filter(duplicated(uid)==TRUE)
-
-#print the number of individuals showing up positive multiple times
-nrow(doublecounted)
-
-
-cases <- demo_testing %>% filter(result_fac=="Positive") %>%
-                filter(!(sample_id_gen %in% doublecounted$sample_id_gen))
+    ## QUESTION: repeat positives are currently dropped altogether
+  demo_testing <- demo_testing %>%
+                  mutate(posdate = ifelse(result_num==1, testdate, NA)) %>%
+                  group_by(uid) %>%
+                  arrange(desc(pos), testdate) %>%
+                  fill(posdate) %>%
+                  mutate(posdate_diff = c(-1, diff(posdate))) %>%
+                  mutate(dup_pos = ifelse(result_num==1 & !is.na(posdate) & posdate_diff >= 0 & posdate_diff < 10, 1, 0)) %>%
+                  ungroup() %>%
+                  filter(dup_pos == 0)
   
+  # #for now: just remove the any duplicate cases, take the first one with the most recent results date
+  # doublecounted <- demo_testing %>% filter(result_fac=="Positive")  %>%
+  #                 arrange(resultsdate)%>%
+  #                 filter(duplicated(uid)==TRUE)
+  # 
+  # #print the number of individuals showing up positive multiple times
+  # nrow(doublecounted)
+
+  ## add epiweek
+  ## add indicators for whether testdate is within 7 or 10 days of report date
+  demo_testing <- demo_testing %>%
+                  mutate(epiweek = epiweek(testdate),
+                         test_10days = ifelse(testdate <= report_date & testdate > report_date_minus10, 1, 0),
+                         test_7days = ifelse(testdate <= report_date & testdate > report_date_minus7, 1, 0))
+  
+  ## create data frame just of positive tests, without duplicates
+  cases <- demo_testing %>% 
+           filter(result_fac=="Positive")
   
 ```
 
 
-```{r demo-testing-wide}
+```{r demo-testing-wide, include=params$run_checks}
 
-  ## by UID, add a sample number # Forrest: already generated this before, see the variable sample_id_gen
+  ## KYRA: I don't think we actually need this wide dataset? I think the summarized datasets below are more helpful
+
+  ## by UID, add a sample number
   ## then make wide dataset by ID
+  # demo_testing_wide <- demo_testing %>%
+  #                      group_by(uid) %>%
+  #                      mutate(sample_id = 1:n()) %>%
+  #                      ungroup() %>%
+  #                      select(uid, sample_id, testdate, result_fac, laboratory_fac) %>%
+  #                      pivot_wider(id_cols = uid, names_from = sample_id, values_from = c(testdate, result_fac, laboratory_fac))
 
 
   ## print out max # of times someone was tested
-
-
   ## active case indicator: who had a positive test in the last 10 days report_date_minus10 - report_date
-  
-
   ## 7-day case indicator
-
-  
   ## tested in last 10 days indicator
-
+  demo_testing_sum <- demo_testing %>%
+                      group_by(uid) %>%
+                      summarize(n_test = n(),
+                                n_test_10day = sum(test_10days, na.rm=TRUE),
+                                n_test_7days = sum(test_7days, na.rm=TRUE),
+                                n_pos = sum(pos, na.rm=TRUE),
+                                n_pos_10day = sum(pos*test_10days, na.rm=TRUE),
+                                n_pos_7day = sum(pos*test_7days, na.rm=TRUE),
+                                case_10day = ifelse(n_pos_10day>0, 1, 0),
+                                case_7day = ifelse(n_pos_7day>0, 1, 0),
+                                tested_10day = ifelse(n_test_10day>0, 1, 0),
+                                tested_7day = ifelse(n_test_7days>0, 1, 0)) %>%
+                      left_join(individualdemographics, by="uid")
 
   ## most recent lab result if tested in past week
     ## pull out most recent test result for anyone tested in last week
     ## (if there is more than one test on the last test date, use the positive)
+    ## QUESTION: worth having this as an indicator in the long dataset?
+  demo_testing_recent <- demo_testing %>%
+                         filter(test_7days == 1) %>%
+                         group_by(uid) %>%
+                         arrange(desc(testdate), desc(pos)) %>%
+                         slice(1)
 
 ```
 
@@ -543,16 +592,70 @@ cases <- demo_testing %>% filter(result_fac=="Positive") %>%
 ```{r totals-by-date}
 
   ## data frame: number first positive by campus, role, testdate
+  ts_cases_role <- cases %>%
+                   group_by(testdate, campus_fac, user_status_fac) %>%
+                   summarize(n = n()) %>%
+                   ungroup()
 
   ## data frame: number first positive by campus status, campus, testdate
+  ts_cases_offcamp <- cases %>%
+                      group_by(testdate, campus_fac, off_campus_fac) %>%
+                      summarize(n = n()) %>%
+                      ungroup()
 
+  ## data frame: number first positive by campus, testdate
+  ts_cases_campus <- cases %>%
+                     group_by(testdate, campus_fac) %>%
+                     summarize(n = n()) %>%
+                     ungroup()
+  
   ## data frame: number pos, neg, incon, invalid, pos+neg, by campus, role, testdate
-
+  ts_test_res <- demo_testing %>%
+                 mutate(test = 1) %>%
+                 group_by(testdate, campus_fac, user_status_fac) %>%
+                 select(test, pos, neg, incon, invalid) %>%
+                 summarise_all(sum) %>%
+                 mutate(pos_neg = pos + neg,
+                        pct_pos = pos / pos_neg) %>%
+                 ungroup()
+  
   ## data frame: number total tests, by campus, lab, testdate
-
+  ts_test_lab <- demo_testing %>%
+                 group_by(testdate, campus_fac, laboratory_fac) %>%
+                 summarise(n_test = n(),
+                           n_valid = n() - sum(invalid),
+                           n_with_res = sum(neg) + sum(pos)) %>%
+                 ungroup()
+  
   ## data frame: number pos, neg, pos+neg by week
+  ts_test_res_wk_all <- ts_test_res %>%
+                          mutate(week = epiweek(testdate)) %>%
+                          group_by(week) %>%
+                          summarise(pos = sum(pos),
+                                    neg = sum(neg),
+                                    pos_neg = pos + neg,
+                                    pct_pos = pos / pos_neg)
 
-
+  ## data frame: number pos, neg, pos+neg by week, campus
+  ts_test_res_wk_camp <-  ts_test_res %>%
+                          mutate(week = epiweek(testdate)) %>%
+                          group_by(week, campus_fac) %>%
+                          summarise(pos = sum(pos),
+                                    neg = sum(neg),
+                                    test = sum(test),
+                                    pos_neg = pos + neg,
+                                    pct_pos = pos / pos_neg)
+  
+  ## data frame: number pos, neg, pos+neg by week, campus, user_status
+  ts_test_res_wk_role <- ts_test_res %>%
+                         mutate(week = epiweek(testdate)) %>%
+                         group_by(week, campus_fac, user_status_fac) %>%
+                         summarise(pos = sum(pos),
+                                   neg = sum(neg),
+                                   test = sum(test),
+                                   pos_neg = pos + neg,
+                                   pct_pos = pos / pos_neg)
+  
   ## long versions of quarantine and isolation
 
 ```
@@ -573,9 +676,31 @@ cases <- demo_testing %>% filter(result_fac=="Positive") %>%
 
   ## parse state page for current COVID19 cases, hospitalizations
   ## operation levels with colors
+  statecondurl <- "https://www.nh.gov/covid19/index.htm"
+  statecondwebsite <- read_html(statecondurl)
 
+  # get state current cases and current hospitalizations
+  covid_num <- statecondwebsite %>%
+    html_nodes("td") %>%
+    html_text()
+
+  state_curr_cases <- as.numeric(gsub(",", "", covid_num[4]))
+  state_curr_hosp <- as.numeric(gsub(",", "", covid_num[6]))
+  state_curr_cond <- params$state_conditions
+
+  statedatetimeupdated <- statecondwebsite %>%
+    html_nodes("h4") %>%
+    html_text()
+  
+  
 ```
 
+### STATEWIDE CONDITIONS
+
+* There are `r state_curr_cases` active cases in the state of New Hampshire. This places the reopening status at the `r pick_color_threshold_str(state_curr_cases, c(-1, 100, 1200, 1800))` level.
+* There are `r state_curr_hosp` currently hospitalized individuals in the state of New Hampshire. This places the reopening status at the `r pick_color_threshold_str(state_curr_hosp, c(-1, 25, 50, 100))` level.
+* The current state restrictions are `r state_curr_cond`.
+* `r statedatetimeupdated`.
 
 ```{r Table-B1B-CampusCond}
 
@@ -593,45 +718,35 @@ cases <- demo_testing %>% filter(result_fac=="Positive") %>%
 ```
 
 
-```{r Figure-B1-EpiCurve}
+```{r Figure-B1-EpiCurve, fig.cap = cap}
 
   ## epi curve, new positive, all time, by day, colored by campus
-
-epicurv_df1 <- cases %>% group_by(labeldate,campus)%>%
-                summarize(cases=n())
-
-max_ecdf1 <- ceiling(max(epicurv_df$cases)/2)*2
-
-epicurv_df1%>%
-        ggplot(aes(x=labeldate,y=cases,fill=campus))+
-        geom_col()+
-        theme_bw()+
-        scale_fill_brewer("Campus",type = "qual")+
-        scale_y_continuous(breaks=c(0,max_ecdf/2,max_ecdf),limits=c(0,max_ecdf))+
-        ylab("Cases")
-        
-
-
+  ggplot(ts_cases_campus, aes(x=testdate, y=n, fill=campus_fac)) +
+    geom_col()+
+    theme_bw()+
+    scale_fill_brewer("Campus",type = "qual") +
+    scale_y_continuous(name = "Cases", breaks=breaks_pretty()) +
+    xlab("") +
+    theme(legend.position = "bottom", legend.title = element_blank())
+      
+  cap <- glue("Figure {fig_counter}. Newly reported positive cases, by testing date, in each campus.")
+  fig_counter <- fig_counter + 1
+  
 ```
 
 
-```{r Figure-B2-EpiCurve-7day}
+```{r Figure-B2-EpiCurve-7day, fig.cap = cap}
 
-epicurv_df2 <- cases %>% filter(labeldate>(Sys.Date()-7))%>%
-                group_by(labeldate,campus)%>%
-                summarize(cases=n())
-
-max_ecdf2 <- ceiling(max(epicurv_df2$cases)/2)*2
-
-epicurv_df2%>%
-        ggplot(aes(x=labeldate,y=cases,fill=campus))+
-        geom_col()+
-        theme_bw()+
-        scale_fill_brewer("Campus",type = "qual")+
-        scale_y_continuous(breaks=c(0,max_ecdf2/2,max_ecdf2),limits=c(0,max_ecdf2))+
-        ylab("Cases")
-        
-        
+  ggplot(ts_cases_campus %>% filter(testdate <= report_date, testdate > report_date_minus7), aes(x=testdate, y=n, fill=campus_fac)) +
+    geom_col()+
+    theme_bw()+
+    scale_fill_brewer("Campus",type = "qual") +
+    scale_y_continuous(name = "Cases", breaks=breaks_pretty()) +
+    xlab("") +
+    theme(legend.position = "bottom", legend.title = element_blank())
+      
+  cap <- glue("Figure {fig_counter}. Newly reported positive cases, by testing date, in each campus for the last 7 days. Any campus not displayed had no reported positive cases in this period.")
+  fig_counter <- fig_counter + 1
 
 ```
 
@@ -655,10 +770,24 @@ epicurv_df2%>%
 ```
 
 
-```{r Figure-B3-PropPositive}
+```{r Figure-B3-PropPositive, fig.cap = cap}
+
+  ## TO DO: make labels the week period. This is annoying :(
 
   ## by week, # pos / (# pos + # neg)
 
+  rng <- ceiling(max(ts_test_res_wk_all$pct_pos, na.rm = TRUE)*1000)/1000
+  brks <- seq(0, rng, 0.0005)
+  
+  ggplot(ts_test_res_wk_all, aes(x=week, y=pct_pos)) +
+    geom_line(color = "#120075", size=1.25) +
+    scale_y_continuous(name="Percent Positive", breaks=brks, labels=glue("{brks*100}%")) +
+    xlab("") +
+    theme_bw() 
+    
+  cap <- glue("Figure {fig_counter}. Proportion of positive tests over all negative and positive tests.")
+  fig_counter <- fig_counter + 1
+  
 ```
 		
 		
@@ -705,30 +834,68 @@ epicurv_df2%>%
 ```
 
 
-```{r Figure-C1-EpiCurve}
+```{r Figure-C1-EpiCurve, fig.cap=cap}
 
   ## epi curve, new positive, all time, by day, colored by role
-
+  ggplot(ts_cases_role %>% filter(campus_fac == "UNH Durham"), aes(x=testdate, y=n, fill=user_status_fac)) +
+    geom_col()+
+    theme_bw()+
+    scale_fill_brewer("Campus",type = "qual") +
+    scale_y_continuous(name = "Cases", breaks=breaks_pretty()) +
+    xlab("") +
+    theme(legend.position = "bottom", legend.title = element_blank())
+      
+  cap <- glue("Figure {fig_counter}. Newly reported positive cases, by testing date, in UNH Durham.")
+  fig_counter <- fig_counter + 1
 ```
 
 
-```{r Figure-C2-EpiCurve-7day}
+```{r Figure-C2-EpiCurve-7day, fig.cap=cap}
 
   ## epi curve, new positive, last 7 days, by day, colored by role
-
+  ggplot(ts_cases_role %>% filter(campus_fac == "UNH Durham" & testdate <= report_date & testdate > report_date_minus7), aes(x=testdate, y=n, fill=user_status_fac)) +
+    geom_col()+
+    theme_bw()+
+    scale_fill_brewer("Campus",type = "qual") +
+    scale_y_continuous(name = "Cases", breaks=breaks_pretty()) +
+    xlab("") +
+    theme(legend.position = "bottom", legend.title = element_blank())
+      
+  cap <- glue("Figure {fig_counter}. Newly reported positive cases, by testing date, in UNH Durham for the last 7 days.")
+  fig_counter <- fig_counter + 1
+  
 ```
 
 
-```{r Figure-C3-TestSubmitted}
+```{r Figure-C3-TestSubmitted, fig.cap=cap}
   
   ## by week, total tests submitted (including repeats), colored by role
-
+  ggplot(ts_test_res_wk_role %>% filter(campus_fac=="UNH Durham"), aes(x=week, y=test)) +
+    geom_line(color = "#120075", size=1.25) +
+    facet_wrap(.~user_status_fac, scales="free_y") +
+    theme_bw()
+  
+  cap <- glue("Figure {fig_counter}. Total tests submitted per week in UNH Durham. Note the different y-axis scales.")
+  fig_counter <- fig_counter + 1
+  
 ```
 
 
-```{r Figure-C4A-PropPositive}
+```{r Figure-C4A-PropPositive, fig.cap=cap}
 
   ## by week, # pos / (# pos + # neg)
+  rng <- ceiling(max(ts_test_res_wk_camp$pct_pos[ts_test_res_wk_camp$campus_fac=="UNH Durham"], na.rm = TRUE)*1000)/1000
+  brks <- seq(0, rng, 0.0005)
+  
+  ggplot(ts_test_res_wk_camp %>% filter(campus_fac == "UNH Durham"), aes(x=week, y=pct_pos)) +
+    geom_line(color = "#120075", size=1.25) +
+    scale_y_continuous(name="Percent Positive", breaks=brks, labels=glue("{brks*100}%")) +
+    xlab("") +
+    theme_bw() 
+    
+  cap <- glue("Figure {fig_counter}. Proportion of positive tests over all negative and positive tests in UNH Durham.")
+  fig_counter <- fig_counter + 1
+  
 
 ```
 
@@ -862,31 +1029,66 @@ epicurv_df2%>%
 ```
 
 
-```{r Figure-D1-EpiCurve}
+```{r Figure-D1-EpiCurve, fig.cap=cap}
 
   ## epi curve, new positive, all time, by day, colored by role
-
+  ggplot(ts_cases_role %>% filter(campus_fac == "UNH Law"), aes(x=testdate, y=n, fill=user_status_fac)) +
+    geom_col()+
+    theme_bw()+
+    scale_fill_brewer("Campus",type = "qual") +
+    scale_y_continuous(name = "Cases", breaks=breaks_pretty()) +
+    xlab("") +
+    theme(legend.position = "bottom", legend.title = element_blank())
+      
+  cap <- glue("Figure {fig_counter}. Newly reported positive cases, by testing date, in UNH Concord.")
+  fig_counter <- fig_counter + 1
 ```
 
 
-```{r Figure-D2-EpiCurve-7day}
+```{r Figure-D2-EpiCurve-7day, fig.cap=cap}
 
   ## epi curve, new positive, last 7 days, by day, colored by role
-
+  ggplot(ts_cases_role %>% filter(campus_fac == "UNH Law" & testdate <= report_date & testdate > report_date_minus7), aes(x=testdate, y=n, fill=user_status_fac)) +
+    geom_col()+
+    theme_bw()+
+    scale_fill_brewer("Campus",type = "qual") +
+    scale_y_continuous(name = "Cases", breaks=breaks_pretty()) +
+    xlab("") +
+    theme(legend.position = "bottom", legend.title = element_blank())
+      
+  cap <- glue("Figure {fig_counter}. Newly reported positive cases, by testing date, in UNH Concord for the last 7 days.")
+  fig_counter <- fig_counter + 1
 ```
 
 
-```{r Figure-D3-TestSubmitted}
+```{r Figure-D3-TestSubmitted, fig.cap=cap}
   
   ## by week, total tests submitted (including repeats), colored by role
-
+  ggplot(ts_test_res_wk_role %>% filter(campus_fac=="UNH Law"), aes(x=week, y=test)) +
+    geom_line(color = "#120075", size=1.25) +
+    facet_wrap(.~user_status_fac, scales="free_y") +
+    theme_bw()
+  
+  cap <- glue("Figure {fig_counter}. Total tests submitted per week in UNH Concord Note the different y-axis scales.")
+  fig_counter <- fig_counter + 1
 ```
 
 
 ```{r Figure-D4-PropPositive}
 
   ## by week, # pos / (# pos + # neg)
-
+  rng <- ceiling(max(ts_test_res_wk_camp$pct_pos[ts_test_res_wk_camp$campus_fac=="UNH Law"], na.rm = TRUE)*1000)/1000
+  brks <- seq(0, rng, 0.0005)
+  
+  ggplot(ts_test_res_wk_camp %>% filter(campus_fac == "UNH Law"), aes(x=week, y=pct_pos)) +
+    geom_line(color = "#120075", size=1.25) +
+    scale_y_continuous(name="Percent Positive", breaks=brks, labels=glue("{brks*100}%")) +
+    xlab("") +
+    theme_bw() 
+    
+  cap <- glue("Figure {fig_counter}. Proportion of positive tests over all negative and positive tests in UNH Law.")
+  fig_counter <- fig_counter + 1
+  
 ```
 
 
@@ -979,31 +1181,66 @@ epicurv_df2%>%
 ```
 
 
-```{r Figure-E1-EpiCurve}
+```{r Figure-E1-EpiCurve, fig.cap=cap}
 
   ## epi curve, new positive, all time, by day, colored by role
-
+  ggplot(ts_cases_role %>% filter(campus_fac == "UNH Manchester"), aes(x=testdate, y=n, fill=user_status_fac)) +
+    geom_col()+
+    theme_bw()+
+    scale_fill_brewer("Campus",type = "qual") +
+    scale_y_continuous(name = "Cases", breaks=breaks_pretty()) +
+    xlab("") +
+    theme(legend.position = "bottom", legend.title = element_blank())
+      
+  cap <- glue("Figure {fig_counter}. Newly reported positive cases, by testing date, in UNH Manchester.")
+  fig_counter <- fig_counter + 1
 ```
 
 
-```{r Figure-E2-EpiCurve-7day}
+```{r Figure-E2-EpiCurve-7day, fig.cap=cap}
 
   ## epi curve, new positive, last 7 days, by day, colored by role
-
+  ggplot(ts_cases_role %>% filter(campus_fac == "UNH Manchester" & testdate <= report_date & testdate > report_date_minus7), aes(x=testdate, y=n, fill=user_status_fac)) +
+    geom_col()+
+    theme_bw()+
+    scale_fill_brewer("Campus",type = "qual") +
+    scale_y_continuous(name = "Cases", breaks=breaks_pretty()) +
+    xlab("") +
+    theme(legend.position = "bottom", legend.title = element_blank())
+      
+  cap <- glue("Figure {fig_counter}. Newly reported positive cases, by testing date, in UNH Manchester for the last 7 days.")
+  fig_counter <- fig_counter + 1
+  
 ```
 
 
-```{r Figure-E3-TestSubmitted}
+```{r Figure-E3-TestSubmitted, fig.cap=cap}
   
   ## by week, total tests submitted (including repeats), colored by role
-
+  ggplot(ts_test_res_wk_role %>% filter(campus_fac=="UNH Manchester"), aes(x=week, y=test)) +
+    geom_line(color = "#120075", size=1.25) +
+    facet_wrap(.~user_status_fac, scales="free_y") +
+    theme_bw()
+  
+  cap <- glue("Figure {fig_counter}. Total tests submitted per week in UNH Manchester. Note the different y-axis scales.")
+  fig_counter <- fig_counter + 1
 ```
 
 
 ```{r Figure-E4-PropPositive}
 
   ## by week, # pos / (# pos + # neg)
-
+  rng <- ceiling(max(ts_test_res_wk_camp$pct_pos[ts_test_res_wk_camp$campus_fac=="UNH Manchester"], na.rm = TRUE)*1000)/1000
+  brks <- seq(0, rng, 0.0005)
+  
+  ggplot(ts_test_res_wk_camp %>% filter(campus_fac == "UNH Manchester"), aes(x=week, y=pct_pos)) +
+    geom_line(color = "#120075", size=1.25) +
+    scale_y_continuous(name="Percent Positive", breaks=brks, labels=glue("{brks*100}%")) +
+    xlab("") +
+    theme_bw() 
+    
+  cap <- glue("Figure {fig_counter}. Proportion of positive tests over all negative and positive tests in UNH Manchester")
+  fig_counter <- fig_counter + 1
 ```
 
 
