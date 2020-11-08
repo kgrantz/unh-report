@@ -816,7 +816,7 @@ params:
     # average number in quarantine this week
     # average quarantine beds in use
 
-
+#get test campus conditions indicators together
 testdf <- ts_test_res %>% filter(testdate>=as.Date(report_date_minus7)) %>%
                 filter(testdate<=as.Date(report_date)) %>%
         group_by(campus_fac) %>%
@@ -825,8 +825,7 @@ testdf <- ts_test_res %>% filter(testdate>=as.Date(report_date_minus7)) %>%
                   )
 
 
-
-#fake dataframe (need to calculate indicators)
+#bring all indicators together
 testdf  %>% filter(!(campus_fac %in% c("Other","Missing"))) %>%
          # switch the campus from rows to columns
         gather(Indicator,value,-campus_fac) %>%
