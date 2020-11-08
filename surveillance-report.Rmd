@@ -135,7 +135,7 @@ params:
                                                             unknown = 4),
                                    user_status_fac = factor(user_status_num,
                                                             levels = 0:4,
-                                                            labels = c("Student", "Faculty", "Staff", "Employee", "Unknown")))
+                                                            labels = c("Student", "Faculty", "Staff", "Employee", "Unknown"))) 
   table(individualdemographics$user_status, individualdemographics$user_status_num)
   table(individualdemographics$user_status, individualdemographics$user_status_fac)
   
@@ -187,10 +187,12 @@ params:
                                                  "unh durham" = 0,
                                                  "unh law"= 1,
                                                  "unh manchester" = 2,
-                                                 "other" = 3)) %>%
+                                                 "other" = 3,
+                                                  )) %>%
+                            mutate(campus_num=ifelse(is.na(campus_num),4,campus_num)) %>%
                             mutate(campus_fac=factor(campus_num,
-                                                     levels = 0:3,
-                                                     labels = c("UNH Durham","UNH Law","UNH Manchester","Other")),
+                                                     levels = 0:4,
+                                                     labels = c("UNH Durham","UNH Law","UNH Manchester","Other","Missing")),
                                    campus_num=as.numeric(campus_fac)-1)
   table(individualdemographics$campus, individualdemographics$campus_fac)
   table(individualdemographics$campus_num, individualdemographics$campus_fac)
@@ -443,7 +445,7 @@ params:
            mutate(n = 1:n()) %>%
            ungroup() %>%
            filter(n==1)
-  
+
   demo_isol <- demo_isol %>%
                filter(!(ind %in% to_rm$ind))
         
@@ -664,8 +666,7 @@ params:
   ## data frame: number first positive by campus, testdate
   ts_cases_campus <- cases %>%
                      group_by(testdate, campus_fac) %>%
-                     summarize(n = n()) %>%
-                     ungroup()
+                     summarize(n = n())
   
   ## data frame: number pos, neg, incon, invalid, pos+neg, by campus, role, testdate
   ts_test_res <- demo_testing %>%
