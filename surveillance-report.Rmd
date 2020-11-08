@@ -816,20 +816,36 @@ params:
     # average number in quarantine this week
     # average quarantine beds in use
 
+
+testingpop <- individualdemographics %>% group_by(campus_fac) %>%
+        summarise(pop=n())
+
 #get test campus conditions indicators together
 testdf <- ts_test_res %>% filter(testdate>=as.Date(report_date_minus7)) %>%
                 filter(testdate<=as.Date(report_date)) %>%
         group_by(campus_fac) %>%
         summarize(totaltests=sum(test),
                   totalpositives=sum(pos)
-                  )
+                  ) %>%
+        left_join(testingpop,by="campus_fac")%>%
+        mutate(testperID=round(totaltests/pop,1)) %>%
+        select(-pop)
+
+casedf <- ts_cases_campus %>% filter(testdate>=as.Date(report_date_minus10)) %>%
+                filter(testdate<=as.Date(report_date)) %>%
+        group_by(campus_fac) %>%
+        summarize(activeCases=n()) %>%
+        left_join(testingpop,by="campus_fac")%>%
+        mutate(activeCaseRate=round(activeCases/pop*1000,1))%>%
+        select(-pop)
 
 
 #bring all indicators together
-testdf  %>% filter(!(campus_fac %in% c("Other","Missing"))) %>%
+left_join(testdf,casedf,by="campus_fac")  %>%
+        filter(!(campus_fac %in% c("Other","Missing"))) %>%
          # switch the campus from rows to columns
         gather(Indicator,value,-campus_fac) %>%
-        spread(campus_fac,value) %>%
+        spread(campus_fac,value) #%>%
         #need to adjust indicator names and put in order
         #need to put campuses in consistent order
         flextable()
