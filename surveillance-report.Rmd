@@ -816,6 +816,32 @@ params:
     # average number in quarantine this week
     # average quarantine beds in use
 
+
+testdf <- ts_test_res %>% filter(testdate>=as.Date(report_date_minus7)) %>%
+                filter(testdate<=as.Date(report_date)) %>%
+        group_by(campus_fac) %>%
+        summarize(totaltests=sum(test),
+                  totalpositives=sum(pos)
+                  )
+
+
+
+#fake dataframe (need to calculate indicators)
+testdf  %>% filter(!(campus_fac %in% c("Other","Missing"))) %>%
+         # switch the campus from rows to columns
+        gather(Indicator,value,-campus_fac) %>%
+        spread(campus_fac,value) %>%
+        #need to adjust indicator names and put in order
+        #need to put campuses in consistent order
+        flextable()
+
+
+
+
+
+
+
+
 ```
 
 
