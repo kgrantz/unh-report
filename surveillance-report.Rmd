@@ -62,15 +62,15 @@ params:
   report_date_str_long <- as.character(format(report_date, format="%B %d, 2020"))
   report_date_str_short <- as.character(format(report_date, format="%b %d"))
   
-  # Date on which report begins
-  start_date <- report_date - 7
+  # Date on which report begins (inclusive)
+  start_date <- report_date - 6
   start_date_str_long <- as.character(format(start_date, format="%B %d, 2020"))
   start_date_str_short <- as.character(format(start_date, format="%b %d"))
   
   # Date to which active cases are counted
   report_date_minus10 <- report_date - 10
   
-  # one week date
+  # one week date (exclusive)
   report_date_minus7 <- report_date - 7
   
   # two week date
@@ -161,9 +161,9 @@ params:
                                                  "cisgender woman"="Assigned Female at Birth",
                                                  "male"="Assigned Male at Birth",
                                                  "female"="Assigned Female at Birth",
-                                                 "transgender wan"= "Trans Man",
+                                                 "transgender man"= "Trans Man",
                                                  "transgender woman"= "Trans Woman",
-                                                 "gender non-Conforming"= "Genderqueer/Non-binary (GNB)",
+                                                 "gender non-conforming"= "Genderqueer/Non-binary (GNB)",
                                                  "gender queer"="Genderqueer/Non-binary (GNB)",
                                                  "non-binary"= "Genderqueer/Non-binary (GNB)",
                                                  "my identity is not listed"= "Not listed or prefer not to say",
@@ -221,8 +221,8 @@ params:
                                                         levels = 0:10,
                                                         labels = c("Liberal Arts",
                                                                    "Business",
-                                                                   "Agriculture",
-                                                                   "Engineering",
+                                                                   "Agriculture/Life Sci",
+                                                                   "Engineering/Phys Sci",
                                                                    "Health",
                                                                    "Graduate School",
                                                                    "Continuing Ed",
@@ -721,42 +721,48 @@ params:
   ## data frame: number in quarantine by campus, role, testdate
   ts_quar_role <- demo_quar_long %>%
                   group_by(date, campus_fac, user_status_fac) %>%
-                  summarize(n = n_distinct(uid)) %>%
+                  summarize(n = n_distinct(uid),
+                            nbed = sum(quar_isol_bed, na.rm=TRUE)) %>%
                   ungroup() %>%
                   mutate(date = as.Date(date, origin="1970-01-01"))
 
   ## data frame: number in quarantine by location (on/off campus), bed status, campus, testdate
   ts_quar_offcamp <- demo_quar_long %>%
                      group_by(date, campus_fac, location, quar_isol_bed) %>%
-                     summarize(n = n_distinct(uid)) %>%
+                     summarize(n = n_distinct(uid),
+                               nbed = sum(quar_isol_bed, na.rm=TRUE)) %>%
                      ungroup() %>%
                      mutate(date = as.Date(date, origin="1970-01-01"))
 
   ## data frame: number in quarantine by campus, testdate
   ts_quar_campus <- demo_quar_long %>%
                     group_by(date, campus_fac) %>%
-                    summarize(n = n_distinct(uid)) %>%
+                    summarize(n = n_distinct(uid),
+                              nbed = sum(quar_isol_bed, na.rm=TRUE)) %>%
                     ungroup() %>%
                     mutate(date = as.Date(date, origin="1970-01-01"))
   
   ## data frame: number in isolation by campus, role, testdate
   ts_isol_role <- demo_isol_long %>%
                   group_by(date, campus_fac, user_status_fac) %>%
-                  summarize(n = n_distinct(uid)) %>%
+                  summarize(n = n_distinct(uid),
+                            nbed = sum(quar_isol_bed, na.rm=TRUE)) %>%
                   ungroup() %>%
                   mutate(date = as.Date(date, origin="1970-01-01"))
 
   ## data frame: number in isolation by location (on/off campus), bed status, campus, testdate
   ts_isol_offcamp <- demo_isol_long %>%
                      group_by(date, campus_fac, location, quar_isol_bed) %>%
-                     summarize(n = n_distinct(uid)) %>%
+                     summarize(n = n_distinct(uid),
+                               nbed = sum(quar_isol_bed, na.rm=TRUE)) %>%
                      ungroup() %>%
                      mutate(date = as.Date(date, origin="1970-01-01"))
 
   ## data frame: number in isolation by campus, testdate
   ts_isol_campus <- demo_isol_long %>%
                     group_by(date, campus_fac) %>%
-                    summarize(n = n_distinct(uid)) %>%
+                    summarize(n = n_distinct(uid),
+                              nbed = sum(quar_isol_bed, na.rm=TRUE)) %>%
                     ungroup() %>%
                     mutate(date = as.Date(date, origin="1970-01-01"))
   
@@ -764,6 +770,14 @@ params:
 ```
 
 # `r glue("UNH SURVEILLANCE REPORT: {report_date}")`
+
+Start: `r start_date_str_long`
+
+End: `r report_date_str_long`
+
+Data included up to: `r format(Sys.Date(), %B %d, %Y)`
+
+
 ## SECTION A: EXECUTIVE SUMMARY
 
 ```{r exec-summary}
@@ -805,7 +819,9 @@ params:
 * The current state restrictions are `r state_curr_cond`.
 * `r statedatetimeupdated`.
 
-```{r Table-B1B-CampusCond, fig.cap=}
+### Conditions at Three Campuses
+
+```{r Table-B1B-CampusCond, fig.cap=cap}
 
   # BY CAMPUS + THRESHOLD INDICATOR if applicable
     # Total tests, including repeats
@@ -819,52 +835,92 @@ params:
     # average quarantine beds in use
 
 
-testingpop <- individualdemographics %>% group_by(campus_fac) %>%
-        summarise(pop=n())
+  testingpop <- individualdemographics %>% 
+                group_by(campus_fac) %>%
+                summarise(pop=n())
 
-#get test campus conditions indicators together
-testdf <- ts_test_res %>% filter(testdate>=as.Date(report_date_minus7)) %>%
-                filter(testdate<=as.Date(report_date)) %>%
-        group_by(campus_fac) %>%
-        summarize(totaltests=sum(test),
-                  totalpositives=sum(pos)
-                  ) %>%
-        left_join(testingpop,by="campus_fac")%>%
-        mutate(testperID=round(totaltests/pop,1)) %>%
-        select(-pop)
+  # get test campus conditions indicators together
+  testdf <- ts_test_res %>% 
+            filter(testdate>as.Date(report_date_minus7)) %>%
+            filter(testdate<=as.Date(report_date)) %>%
+            group_by(campus_fac,.drop=FALSE) %>%
+            summarize(totaltests=sum(test,na.rm=TRUE),
+                      totalpositives=sum(pos,na.rm=TRUE)
+                      ) %>%
+            left_join(testingpop,by="campus_fac")%>%
+            mutate(testperID=round(totaltests/pop,1)) %>%
+            select(-pop)
 
-#get case campus conditions indicators together
-casedf <- ts_cases_campus %>% filter(testdate>=as.Date(report_date_minus10)) %>%
-                filter(testdate<=as.Date(report_date)) %>%
-        group_by(campus_fac) %>%
-        summarize(activeCases=n()) %>%
-        left_join(testingpop,by="campus_fac")%>%
-        mutate(activeCaseRate=round(activeCases/pop*1000,1))%>%
-        select(-pop)
+  # get case campus conditions indicators together
+  casedf <- ts_cases_campus %>% 
+            filter(testdate>as.Date(report_date_minus10)) %>%
+            filter(testdate<=as.Date(report_date)) %>%
+            group_by(campus_fac,.drop=FALSE) %>%
+            summarize(activeCases=sum(n,na.rm=TRUE)) %>%
+            left_join(testingpop,by="campus_fac")%>%
+            mutate(activeCaseRate=round(activeCases/pop*1000,1))%>%
+            select(-pop)
 
+  # isolation indicators
+  isoldf <- ts_isol_campus %>%
+            filter(date>as.Date(report_date_minus7)) %>%
+            filter(date<=as.Date(report_date)) %>%
+            group_by(campus_fac,.drop=FALSE) %>%
+            summarize(NAvgIsol = mean(n, na.rm=TRUE),
+                      NAvgIsolBed = mean(nbed, na.rm=TRUE)) %>%
+            replace_na(list(NAvgIsol = 0,
+                            NAvgIsolBed = 0)) %>%
+            mutate(NAvgIsolBedPct = NAvgIsolBed / 59) %>%
+            mutate(NAvgIsol = round(NAvgIsol, 1)) %>%
+            mutate(NAvgIsolBedLabel = ifelse(campus_fac=="UNH Durham", 
+                                             glue("{round(NAvgIsolBed, 1)}, ({round(NAvgIsolBedPct*100, 1)}%)"),
+                                             "")) %>%
+            select(campus_fac, NAvgIsol, NAvgIsolBedLabel)
 
-#bring all indicators together
-left_join(testdf,casedf,by="campus_fac")  %>%
-        filter(!(campus_fac %in% c("Other","Missing"))) %>%
-        # switch the campus from rows to columns
-        gather(Indicator,value,-campus_fac) %>%
-        spread(campus_fac,value) %>%
-        # make character vectors for rounding purposes
-        mutate(`UNH Durham`=as.character(`UNH Durham`))%>%
-        mutate(`UNH Law`=as.character(`UNH Law`))%>%
-        mutate(`UNH Manchester`=as.character(`UNH Manchester`))%>%
-        #need to adjust indicator names and put in order
-        mutate(Indicator=recode_factor(Indicator,
-                                "totaltests"= "Numer of tests",
-                                "testperID" = "Tests per person",
-                                "totalpositives"="All positive tests",
-                                "activeCases"="Active Cases",
-                                "activeCaseRate"="Active Cases per 1000",
-                                ))%>%
-        arrange(Indicator) %>%
-        #make flextable
-        flextable() %>%
-        autofit()
+  # quarantine indicators
+  quardf <- ts_quar_campus %>%
+            filter(date>as.Date(report_date_minus7)) %>%
+            filter(date<=as.Date(report_date)) %>%
+            group_by(campus_fac,.drop=FALSE) %>%
+            summarize(NAvgQuar = mean(n, na.rm=TRUE),
+                      NAvgQuarBed = mean(nbed, na.rm=TRUE)) %>%
+            replace_na(list(NAvgQuar = 0,
+                            NAvgQuarBed = 0)) %>%
+            mutate(NAvgQuarBedPct = NAvgQuarBed / 180) %>%
+            mutate(NAvgQuar = round(NAvgQuar, 1)) %>%
+            mutate(NAvgQuarBedLabel = ifelse(campus_fac=="UNH Durham",
+                                             glue("{round(NAvgQuarBed, 1)}, ({round(NAvgQuarBedPct*100, 1)}%)"),
+                                             "")) %>%
+            select(campus_fac, NAvgQuar, NAvgQuarBedLabel)
+  
+  # bring all indicators together
+  left_join(testdf,casedf,by="campus_fac")  %>%
+    left_join(isoldf, by="campus_fac") %>%
+    left_join(quardf, by="campus_fac") %>%
+    filter(!(campus_fac %in% c("Other","Missing"))) %>%
+    # switch the campus from rows to columns
+    gather(Indicator,value,-campus_fac) %>%
+    spread(campus_fac,value) %>%
+    # make character vectors for rounding purposes
+    mutate(`UNH Durham`=as.character(`UNH Durham`))%>%
+    mutate(`UNH Law`=as.character(`UNH Law`))%>%
+    mutate(`UNH Manchester`=as.character(`UNH Manchester`))%>%
+    #need to adjust indicator names and put in order
+    mutate(Indicator=recode_factor(Indicator,
+                            "totaltests"= "Number of tests",
+                            "testperID" = "Tests per unique ID",
+                            "totalpositives"="Total Positive Test Results",
+                            "activeCases"="Active Cases",
+                            "activeCaseRate"="Active Cases per 1000",
+                            "NAvgIsol" = "Average number in isolation this week",
+                            "NAvgIsolBedLabel" = "Average isolation beds in use (n, %)",
+                            "NAvgQuar" = "Average number in quarantine this week",
+                            "NAvgQuarBedLabel" = "Average quarantine beds in use (n, %)"
+                            ))%>%
+    arrange(Indicator) %>%
+    #make flextable
+    flextable() %>%
+    autofit()
 
 
  cap <- glue("Table {tab_counter}. Key indicators at each campus.")
