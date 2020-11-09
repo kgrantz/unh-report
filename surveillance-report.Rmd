@@ -1175,10 +1175,9 @@ Data reported as of: `r format(Sys.Date(), "%B %d, %Y")`
 ```
 
 
-```{r Figure-C4-Map-Active and Cumulative}
+```{r Figure-C4-Map-Active-and-Cumulative}
 
 box = c(xmin = 1177000 , xmax = 1183000 ,ymin=229500,ymax=237000 )
-
 
 BaseMap <- read_sf("shapefiles/UNH_Basemap.shp") 
 Buildings <- read_sf("shapefiles/UNH_Buildings.shp")%>%
@@ -1240,7 +1239,7 @@ dormlabels <-  data.frame(
 )
 
 
-
+#function to adjust size of cases (may want to use later)
 calc_radius <- function(n, scale_factor = 30) {
   sqrt(n)/sqrt(max(n,na.rm = TRUE)) * scale_factor
 }
