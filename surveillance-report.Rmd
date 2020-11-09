@@ -28,6 +28,8 @@ params:
   library(lubridate)
   library(rvest)
   library(scales)
+  library(sf)
+  library(ggrepel)
   
   pick_color_threshold <- function(value, 
                                    thresholds, 
@@ -767,6 +769,21 @@ params:
                     mutate(date = as.Date(date, origin="1970-01-01"))
   
 
+```
+
+```{r map loading}
+  box = c(xmin = 1177000 , xmax = 1183000 ,ymin=229500,ymax=237000 )
+  
+  BaseMap <- read_sf("shapefiles/UNH_Basemap.shp") 
+  Buildings <- read_sf("shapefiles/UNH_Buildings.shp")%>%
+                  st_crop(box)
+  
+  sidewalks <- filter(BaseMap,LAND_USE=="Sidewalk")%>%
+                  st_make_valid()%>%
+                  st_crop(box)
+  greenspace <- filter(BaseMap,LAND_USE=="Green Space")%>%
+                  st_make_valid()%>%
+                  st_crop(box)
 ```
 
 # `r glue("UNH SURVEILLANCE REPORT: {report_date}")`
