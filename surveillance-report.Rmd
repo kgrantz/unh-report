@@ -18,6 +18,8 @@ params:
   knitr::opts_knit$set(eval.after = 'fig.cap')
 
   fig_counter <- 1
+  tab_counter <- 1
+
   
   library(tidyverse)
   library(glue)
@@ -803,7 +805,7 @@ params:
 * The current state restrictions are `r state_curr_cond`.
 * `r statedatetimeupdated`.
 
-```{r Table-B1B-CampusCond}
+```{r Table-B1B-CampusCond, fig.cap=}
 
   # BY CAMPUS + THRESHOLD INDICATOR if applicable
     # Total tests, including repeats
@@ -831,6 +833,7 @@ testdf <- ts_test_res %>% filter(testdate>=as.Date(report_date_minus7)) %>%
         mutate(testperID=round(totaltests/pop,1)) %>%
         select(-pop)
 
+#get case campus conditions indicators together
 casedf <- ts_cases_campus %>% filter(testdate>=as.Date(report_date_minus10)) %>%
                 filter(testdate<=as.Date(report_date)) %>%
         group_by(campus_fac) %>%
@@ -843,18 +846,29 @@ casedf <- ts_cases_campus %>% filter(testdate>=as.Date(report_date_minus10)) %>%
 #bring all indicators together
 left_join(testdf,casedf,by="campus_fac")  %>%
         filter(!(campus_fac %in% c("Other","Missing"))) %>%
-         # switch the campus from rows to columns
+        # switch the campus from rows to columns
         gather(Indicator,value,-campus_fac) %>%
-        spread(campus_fac,value) #%>%
+        spread(campus_fac,value) %>%
+        # make character vectors for rounding purposes
+        mutate(`UNH Durham`=as.character(`UNH Durham`))%>%
+        mutate(`UNH Law`=as.character(`UNH Law`))%>%
+        mutate(`UNH Manchester`=as.character(`UNH Manchester`))%>%
         #need to adjust indicator names and put in order
-        #need to put campuses in consistent order
-        flextable()
+        mutate(Indicator=recode_factor(Indicator,
+                                "totaltests"= "Numer of tests",
+                                "testperID" = "Tests per person",
+                                "totalpositives"="All positive tests",
+                                "activeCases"="Active Cases",
+                                "activeCaseRate"="Active Cases per 1000",
+                                ))%>%
+        arrange(Indicator) %>%
+        #make flextable
+        flextable() %>%
+        autofit()
 
 
-
-
-
-
+ cap <- glue("Table {tab_counter}. Key indicators at each campus.")
+  tab_counter <- tab_counter + 1
 
 
 ```
