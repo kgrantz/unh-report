@@ -1666,7 +1666,7 @@ indicatordf <-  left_join(testdf,casedf,by="campus_fac")  %>%
 ```
 
 
-```{r Table-C6-DetailedTable}
+```{r Table-C6-DetailedTable, fig.cap=cap}
 
   # Cumulative cases, previous week cases, this week cases, % change this week
     # Total
@@ -1677,7 +1677,90 @@ indicatordf <-  left_join(testdf,casedf,by="campus_fac")  %>%
     # by sex at birth
     # by dorm area
     # by college
+  cases_dur <- cases %>%
+               filter(campus_fac == "UNH Durham") %>%
+               mutate(level = "Total") %>%
+               bind_rows(cases %>%
+                         filter(campus_fac == "UNH Durham") %>%
+                         filter(testdate > report_date_minus14 & testdate <= report_date) %>%
+                         mutate(level = ifelse(testdate > report_date_minus7, "Current", "Previous"))) %>%
+               mutate(level = factor(level, levels=c("Total", "Current", "Previous")))
 
+  cases_tot <- cases_dur %>%
+               group_by(level, .drop = FALSE) %>%
+               summarise(n = n()) %>%
+               pivot_wider(names_from = level, values_from = n) %>%
+               mutate(var = "Total",
+                      level = "")
+              
+  cases_role <- cases_dur %>%
+                group_by(level, user_status_fac, .drop = FALSE) %>%
+                summarise(n = n()) %>%
+                pivot_wider(names_from = level, values_from = n) %>%
+                mutate(var = "Role") %>%
+                rename(level = user_status_fac)
+  
+  cases_age <- cases_dur %>%
+               group_by(level, age_cat, .drop = FALSE) %>%
+               summarise(n = n()) %>%
+               pivot_wider(names_from = level, values_from = n) %>%
+               mutate(var = "Age") %>%
+               rename(level = age_cat)
+  
+  cases_gen <- cases_dur %>%
+               group_by(level, gender, .drop = FALSE) %>%
+               summarise(n = n()) %>%
+               pivot_wider(names_from = level, values_from = n) %>%
+               mutate(var = "Gender") %>%
+               rename(level = gender)
+  
+  cases_dorm <- cases_dur %>%
+                group_by(level, dorm_group, .drop = FALSE) %>%
+                summarise(n = n()) %>%
+                pivot_wider(names_from = level, values_from = n) %>%
+                mutate(var = "Dorm") %>%
+                rename(level = dorm_group)
+   
+  cases_coll <- cases_dur %>%
+                group_by(level, college_fac, .drop = FALSE) %>%
+                summarise(n = n()) %>%
+                pivot_wider(names_from = level, values_from = n) %>%
+                mutate(var = "College") %>%
+                rename(level = college_fac)
+  
+  tab_c6 <- bind_rows(cases_tot,
+                      cases_role,
+                      cases_age,
+                      cases_gen,
+                      cases_dorm,
+                      cases_coll) %>%
+            select(var, level, Total, Previous, Current) %>%
+            replace_na(list(Total = 0,
+                            Previous = 0,
+                            Current = 0)) %>%
+            mutate(pct_change = ifelse(Previous>0,
+                                       glue("{round((Current - Previous)/Previous*100, 1)}%"),
+                                       "-")) %>%
+            group_by(var) %>%
+            mutate(ind=1:n()) %>%
+            ungroup() %>%
+            mutate(var = ifelse(ind==1, var, ""))
+            
+  tab_c6 %>%
+    flextable() %>%
+    set_header_labels(var = "", 
+                      level="",
+                      Total = "Cumulative\n(all time)",
+                      Current = glue("Reporting period \nending {report_date_str_short}"),
+                      Previous = glue("Reporting period \nending {report_date_minus7_str_short}"),
+                      pct_change = "% Change") %>%
+    bold(i=1, part="header") %>%
+    bold(j=1) %>%
+    autofit()
+  
+  cap <- glue("**Table C{tab_counter}**. Cumulative and current cases at UNH Durham.")
+  tab_counter <- tab_counter + 1 
+  
 ```
 
 
@@ -2014,7 +2097,7 @@ indicatordf <-  left_join(testdf,casedf,by="campus_fac")  %>%
 ```
 
 
-```{r Table-D6-DetailedTable, eval=params$concord}
+```{r Table-D6-DetailedTable, eval=params$concord, fig.cap=cap}
 
   # Cumulative cases, previous week cases, this week cases, % change this week
     # Total
@@ -2025,7 +2108,90 @@ indicatordf <-  left_join(testdf,casedf,by="campus_fac")  %>%
     # by sex at birth
     # by dorm area
     # by college
+  cases_law <- cases %>%
+               filter(campus_fac == "UNH Law") %>%
+               mutate(level = "Total") %>%
+               bind_rows(cases %>%
+                         filter(campus_fac == "UNH Law") %>%
+                         filter(testdate > report_date_minus14 & testdate <= report_date) %>%
+                         mutate(level = ifelse(testdate > report_date_minus7, "Current", "Previous"))) %>%
+               mutate(level = factor(level, levels=c("Total", "Current", "Previous")))
 
+  cases_tot <- cases_law %>%
+               group_by(level, .drop = FALSE) %>%
+               summarise(n = n()) %>%
+               pivot_wider(names_from = level, values_from = n) %>%
+               mutate(var = "Total",
+                      level = "")
+              
+  cases_role <- cases_law %>%
+                group_by(level, user_status_fac, .drop = FALSE) %>%
+                summarise(n = n()) %>%
+                pivot_wider(names_from = level, values_from = n) %>%
+                mutate(var = "Role") %>%
+                rename(level = user_status_fac)
+  
+  cases_age <- cases_law %>%
+               group_by(level, age_cat, .drop = FALSE) %>%
+               summarise(n = n()) %>%
+               pivot_wider(names_from = level, values_from = n) %>%
+               mutate(var = "Age") %>%
+               rename(level = age_cat)
+  
+  cases_gen <- cases_law %>%
+               group_by(level, gender, .drop = FALSE) %>%
+               summarise(n = n()) %>%
+               pivot_wider(names_from = level, values_from = n) %>%
+               mutate(var = "Gender") %>%
+               rename(level = gender)
+  
+  cases_dorm <- cases_law %>%
+                group_by(level, dorm_group, .drop = FALSE) %>%
+                summarise(n = n()) %>%
+                pivot_wider(names_from = level, values_from = n) %>%
+                mutate(var = "Dorm") %>%
+                rename(level = dorm_group)
+   
+  cases_coll <- cases_law %>%
+                group_by(level, college_fac, .drop = FALSE) %>%
+                summarise(n = n()) %>%
+                pivot_wider(names_from = level, values_from = n) %>%
+                mutate(var = "College") %>%
+                rename(level = college_fac)
+  
+  tab_d6 <- bind_rows(cases_tot,
+                      cases_role,
+                      cases_age,
+                      cases_gen,
+                      cases_dorm,
+                      cases_coll) %>%
+            select(var, level, Total, Previous, Current) %>%
+            replace_na(list(Total = 0,
+                            Previous = 0,
+                            Current = 0)) %>%
+            mutate(pct_change = ifelse(Previous>0,
+                                       glue("{round((Current - Previous)/Previous*100, 1)}%"),
+                                       "-")) %>%
+            group_by(var) %>%
+            mutate(ind=1:n()) %>%
+            ungroup() %>%
+            mutate(var = ifelse(ind==1, var, ""))
+            
+  tab_d6 %>%
+    flextable() %>%
+    set_header_labels(var = "", 
+                      level="",
+                      Total = "Cumulative\n(all time)",
+                      Current = glue("Reporting period \nending {report_date_str_short}"),
+                      Previous = glue("Reporting period \nending {report_date_minus7_str_short}"),
+                      pct_change = "% Change") %>%
+    bold(i=1, part="header") %>%
+    bold(j=1) %>%
+    autofit()
+  
+  cap <- glue("**Table D{tab_counter}**. Cumulative and current cases at UNH Concord")
+  tab_counter <- tab_counter + 1 
+  
 ```
 
 
@@ -2361,7 +2527,7 @@ indicatordf <-  left_join(testdf,casedf,by="campus_fac")  %>%
 ```
 
 
-```{r Table-E6-DetailedTable, eval=params$manchester}
+```{r Table-E6-DetailedTable, eval=params$manchester, fig.cap=cap}
 
   # Cumulative cases, previous week cases, this week cases, % change this week
     # Total
@@ -2373,5 +2539,89 @@ indicatordf <-  left_join(testdf,casedf,by="campus_fac")  %>%
     # by dorm area
     # by college
 
+  cases_man <- cases %>%
+               filter(campus_fac == "UNH Manchester") %>%
+               mutate(level = "Total") %>%
+               bind_rows(cases %>%
+                         filter(campus_fac == "UNH Manchester") %>%
+                         filter(testdate > report_date_minus14 & testdate <= report_date) %>%
+                         mutate(level = ifelse(testdate > report_date_minus7, "Current", "Previous"))) %>%
+               mutate(level = factor(level, levels=c("Total", "Current", "Previous")))
+
+  cases_tot <- cases_man %>%
+               group_by(level, .drop = FALSE) %>%
+               summarise(n = n()) %>%
+               pivot_wider(names_from = level, values_from = n) %>%
+               mutate(var = "Total",
+                      level = "")
+              
+  cases_role <- cases_man %>%
+                group_by(level, user_status_fac, .drop = FALSE) %>%
+                summarise(n = n()) %>%
+                pivot_wider(names_from = level, values_from = n) %>%
+                mutate(var = "Role") %>%
+                rename(level = user_status_fac)
+  
+  cases_age <- cases_man %>%
+               group_by(level, age_cat, .drop = FALSE) %>%
+               summarise(n = n()) %>%
+               pivot_wider(names_from = level, values_from = n) %>%
+               mutate(var = "Age") %>%
+               rename(level = age_cat)
+  
+  cases_gen <- cases_man %>%
+               group_by(level, gender, .drop = FALSE) %>%
+               summarise(n = n()) %>%
+               pivot_wider(names_from = level, values_from = n) %>%
+               mutate(var = "Gender") %>%
+               rename(level = gender)
+  
+  cases_dorm <- cases_man %>%
+                group_by(level, dorm_group, .drop = FALSE) %>%
+                summarise(n = n()) %>%
+                pivot_wider(names_from = level, values_from = n) %>%
+                mutate(var = "Dorm") %>%
+                rename(level = dorm_group)
+   
+  cases_coll <- cases_man %>%
+                group_by(level, college_fac, .drop = FALSE) %>%
+                summarise(n = n()) %>%
+                pivot_wider(names_from = level, values_from = n) %>%
+                mutate(var = "College") %>%
+                rename(level = college_fac)
+  
+  tab_e6 <- bind_rows(cases_tot,
+                      cases_role,
+                      cases_age,
+                      cases_gen,
+                      cases_dorm,
+                      cases_coll) %>%
+            select(var, level, Total, Previous, Current) %>%
+            replace_na(list(Total = 0,
+                            Previous = 0,
+                            Current = 0)) %>%
+            mutate(pct_change = ifelse(Previous>0,
+                                       glue("{round((Current - Previous)/Previous*100, 1)}%"),
+                                       "-")) %>%
+            group_by(var) %>%
+            mutate(ind=1:n()) %>%
+            ungroup() %>%
+            mutate(var = ifelse(ind==1, var, ""))
+            
+  tab_e6 %>%
+    flextable() %>%
+    set_header_labels(var = "", 
+                      level="",
+                      Total = "Cumulative\n(all time)",
+                      Current = glue("Reporting period \nending {report_date_str_short}"),
+                      Previous = glue("Reporting period \nending {report_date_minus7_str_short}"),
+                      pct_change = "% Change") %>%
+    bold(i=1, part="header") %>%
+    bold(j=1) %>%
+    autofit()
+
+  cap <- glue("**Table E{tab_counter}**. Cumulative and current cases at UNH Manchester.")
+  tab_counter <- tab_counter + 1  
+  
 ```
 
