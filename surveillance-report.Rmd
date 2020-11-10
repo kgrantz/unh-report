@@ -445,7 +445,7 @@ params:
            mutate(overlap = ifelse(prev_quarexit > quar_entrydate, 1, 0)) %>%
            mutate(overlap = max(overlap, na.rm = TRUE)) %>%
            filter(overlap == 1) %>%
-           mutate(n_missing = sum(is.na(c(notifydate, location)), na.rm=TRUE)) %>%
+           mutate(n_missing = sum(is.na(c(as.character(notifydate), location)), na.rm=TRUE)) %>%
            arrange(desc(n_missing)) %>%
            mutate(n = 1:n()) %>%
            ungroup() %>%
@@ -892,7 +892,7 @@ Data reported as of: `r format(Sys.Date(), "%B %d, %Y")`
             mutate(NAvgIsol = round(NAvgIsol, 1)) %>%
             mutate(NAvgIsolBedLabel = ifelse(campus_fac=="UNH Durham", 
                                              glue("{round(NAvgIsolBed, 1)}, ({round(NAvgIsolBedPct*100, 1)}%)"),
-                                             "")) %>%
+                                             "-")) %>%
             select(campus_fac, NAvgIsol, NAvgIsolBedLabel)
 
   # quarantine indicators
@@ -908,11 +908,11 @@ Data reported as of: `r format(Sys.Date(), "%B %d, %Y")`
             mutate(NAvgQuar = round(NAvgQuar, 1)) %>%
             mutate(NAvgQuarBedLabel = ifelse(campus_fac=="UNH Durham",
                                              glue("{round(NAvgQuarBed, 1)}, ({round(NAvgQuarBedPct*100, 1)}%)"),
-                                             "")) %>%
+                                             "-")) %>%
             select(campus_fac, NAvgQuar, NAvgQuarBedLabel)
   
   # bring all indicators together
-  left_join(testdf,casedf,by="campus_fac")  %>%
+indicatordf <-  left_join(testdf,casedf,by="campus_fac")  %>%
     left_join(isoldf, by="campus_fac") %>%
     left_join(quardf, by="campus_fac") %>%
     filter(!(campus_fac %in% c("Other","Missing"))) %>%
@@ -935,9 +935,9 @@ Data reported as of: `r format(Sys.Date(), "%B %d, %Y")`
                             "NAvgQuar" = "Average number in quarantine this week",
                             "NAvgQuarBedLabel" = "Average quarantine beds in use (n, %)"
                             ))%>%
-    arrange(Indicator) %>%
+    arrange(Indicator)
     #make flextable
-    flextable() %>%
+indicatordf %>% flextable() %>%
     autofit()
 
 
@@ -1106,6 +1106,10 @@ Data reported as of: `r format(Sys.Date(), "%B %d, %Y")`
     # average isolation beds in use
     # average number in quarantine this week
     # average quarantine beds in use
+
+indicatordf %>% select(Indicator, `UNH Durham`) %>%
+        flextable() %>%
+        autofit()
 
 ```
 
@@ -1445,6 +1449,13 @@ Data reported as of: `r format(Sys.Date(), "%B %d, %Y")`
     # total active cases from last 10 days
     # active cases per 1000 tested
 
+
+indicatordf %>% select(Indicator, `UNH Law`) %>%
+        flextable() %>%
+        autofit()
+
+
+
 ```
 
 
@@ -1640,6 +1651,11 @@ Data reported as of: `r format(Sys.Date(), "%B %d, %Y")`
   # This Week value + Threshold Indicator, if applicable
     # total active cases from last 10 days
     # active cases per 1000 tested
+
+indicatordf %>% select(Indicator, `UNH Law`) %>%
+        flextable() %>%
+        autofit()
+
 
 ```
 
