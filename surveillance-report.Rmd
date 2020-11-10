@@ -6,11 +6,11 @@ output:
     toc_float: TRUE
     theme: journal
 params:
-  run_checks: TRUE # whether to run and print out basic data checks
-  show_cleaning: TRUE # whether to print out basic info about data cleaning steps
+  run_checks: FALSE # whether to run and print out basic data checks
+  show_cleaning: FALSE # whether to print out basic info about data cleaning steps
   concord: TRUE #indicate whether to run extra graphics for concord
   manchester: TRUE #indicate whether to run extra graphics for manchester
-  report_date: "2020-10-12" # date in YYYY-MM-DD
+  report_date: "2020-11-06" # date in YYYY-MM-DD
   state_conditions: "Limited Open"
 ---
 
@@ -461,7 +461,7 @@ params:
         
 ```
 
-```{r isol-reformat, echo=params$run_checks}
+```{r isol-reformat, include=params$run_checks}
 
   ## create df of only quarantine events
   demo_quar <- demo_isol %>%
@@ -2140,12 +2140,17 @@ indicatordf <-  left_join(testdf,casedf,by="campus_fac")  %>%
   
   cases_law <- cases %>%
                filter(campus_fac == "UNH Law") %>%
-               mutate(level = "Total") %>%
-               bind_rows(cases %>%
-                         filter(campus_fac == "UNH Law") %>%
-                         filter(testdate > report_date_minus14 & testdate <= report_date) %>%
-                         mutate(level = ifelse(testdate > report_date_minus7, "Current", "Previous"))) %>%
-               mutate(level = factor(level, levels=c("Total", "Current", "Previous")))
+               mutate(level = "Total") %>%glimpse()
+  
+  
+  cases_law_currprev<- cases %>%
+                 filter(campus_fac == "UNH Law") %>%
+                 filter(testdate > report_date_minus14 & testdate <= report_date) %>%
+                 mutate(level = ifelse(testdate > report_date_minus7, "Current", "Previous"))
+  #avoids error if there are no current or previous cases
+  if(nrow(cases_law_currprev)>0){ cases_law <- bind_rows(cases_law,cases_law_currprev)}
+ 
+  cases_law <- cases_law %>% mutate(level = factor(level, levels=c("Total", "Current", "Previous")))
 
   cases_tot <- cases_law %>%
                group_by(level, .drop = FALSE) %>%
