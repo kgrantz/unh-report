@@ -30,6 +30,7 @@ params:
   library(scales)
   library(sf)
   library(ggrepel)
+  library(lwgeom)
   
   pick_color_threshold <- function(value, 
                                    thresholds, 
@@ -1175,95 +1176,71 @@ Data reported as of: `r format(Sys.Date(), "%B %d, %Y")`
 ```
 
 
-```{r Figure-C4-Map-Active-and-Cumulative}
+```{r Figure-C4-Map-Active-and-Cumulative, fig.cap=cap}
 
-box = c(xmin = 1177000 , xmax = 1183000 ,ymin=229500,ymax=237000 )
+  Allcases <- cases %>%
+              left_join(read_csv("generated_data/linkingfile.csv")) %>%
+              group_by(BUILDING_N) %>%
+              summarise(cases=n()) 
 
-BaseMap <- read_sf("shapefiles/UNH_Basemap.shp") 
-Buildings <- read_sf("shapefiles/UNH_Buildings.shp")%>%
-        st_crop(box)
-
-sidewalks <- filter(BaseMap,LAND_USE=="Sidewalk")%>%
-        st_make_valid()%>%
-        st_crop(box)
-greenspace <- filter(BaseMap,LAND_USE=="Green Space")%>%
-        st_make_valid()%>%
-        st_crop(box)
+  cases10 <- cases %>% 
+             filter(testdate>report_date_minus10 & testdate<=report_date)%>%
+             left_join(read_csv("generated_data/linkingfile.csv")) %>%
+             group_by(BUILDING_N) %>%
+             summarise(cases=n())
 
 
-Allcases <- demo_testing %>% filter(result_fac=="Positive") %>%
-        left_join(read_csv("generated_data/linkingfile.csv")) %>%
-        group_by(BUILDING_N) %>%
-        summarise(cases=n()) 
+  dormlist <- demo_testing %>% 
+              filter(!is.na(dorm)) %>%
+              distinct(dorm) %>%
+              left_join(read_csv("generated_data/linkingfile.csv")) %>%
+              select(-FACILITIES)
 
-cases10 <- demo_testing %>% filter(result_fac=="Positive") %>%
-        filter(testdate>=(Sys.Date()-10))%>%
-        left_join(read_csv("generated_data/linkingfile.csv")) %>%
-        group_by(BUILDING_N) %>%
-        summarise(cases=n())
+  dormdf <- filter(Buildings,BUILDING_N %in% dormlist$BUILDING_N) %>%
+            mutate(centroid=st_centroid(geometry))%>%
+            mutate(centerx=NA,centery=NA)
 
+  for (i in seq_len(nrow(dormdf))){
+          
+          dormdf$centerx[i] <- dormdf$centroid[[i]][[1]]
+          dormdf$centery[i] <- dormdf$centroid[[i]][[2]]
+          
+  }
 
-dormlist <- demo_testing %>% filter(!is.na(dorm)) %>%
-        distinct(dorm) %>%
-        left_join(read_csv("generated_data/linkingfile.csv")) %>%
-        select(-FACILITIES)
-
-
-
-dormdf <- filter(Buildings,BUILDING_N %in% dormlist$BUILDING_N) %>%
-        mutate(centroid=st_centroid(geometry))%>%
-        mutate(centerx=NA,centery=NA)
-
-for (i in seq_len(nrow(dormdf))){
-        
-        dormdf$centerx[i] <- dormdf$centroid[[i]][[1]]
-        dormdf$centery[i] <- dormdf$centroid[[i]][[2]]
-        
-}
-
-
-dormdf <- bind_rows(left_join(dormdf,Allcases)%>%
-                            mutate(map="Cumulative Cases"),
-                    left_join(dormdf,cases10)%>%
-                            mutate(map="Active Cases (last 10 days)"),
-                    
-)
+  to_add <- bind_rows(Allcases %>%  mutate(map = "Cumulative Cases"),
+                      cases10 %>% mutate(map = "Active Cases (last 10 days)"))
+  dormdf <- left_join(dormdf, to_add)
+  
+  dormlabels <-  data.frame(
+          names=c("The Gables", "Woodside","The Hills",
+                  "The Valley", "The Timbers"),
+          
+          x=c(0.55,0.65,0.8,0.85,0.35)*(box[2]-box[1])+box[1],
+          y=c(0.8,0.7,0.55,0.25,0.35)*(box[4]-box[3])+box[3]
+  )
 
 
-dormlabels <-  data.frame(
-        names=c("The Gables", "Woodside","The Hills",
-                "The Valley", "The Timbers"),
-        
-        x=c(0.55,0.65,0.8,0.85,0.35)*(box[2]-box[1])+box[1],
-        y=c(0.8,0.7,0.55,0.25,0.35)*(box[4]-box[3])+box[3]
-)
+  #function to adjust size of cases (may want to use later)
+  calc_radius <- function(n, scale_factor = 30) {
+    sqrt(n)/sqrt(max(n,na.rm = TRUE)) * scale_factor
+  }
 
+  dormdf %>% 
+    mutate(caseSize=calc_radius(cases)) %>% 
+    filter(!is.na(map)) %>%
+    ggplot() +
+    geom_sf(col=NA,fill="black")+
+    geom_sf(data=greenspace,fill="lightblue",col=NA)+
+    geom_point(aes(size=cases,x=centerx,y=centery),
+               color="darkred",fill="red",alpha=0.8,pch=21)+
+    geom_text(data=dormlabels,aes(x=x,y=y,label=names))+
+    scale_size(limits=c(1,max(c(20,dormdf$cases),na.rm = TRUE)),breaks=c(1,10,20))+
+    theme_void()+
+    facet_wrap(.~map,nrow=1)
 
-#function to adjust size of cases (may want to use later)
-calc_radius <- function(n, scale_factor = 30) {
-  sqrt(n)/sqrt(max(n,na.rm = TRUE)) * scale_factor
-}
-
-
-
-dormdf %>% mutate(caseSize=calc_radius(cases)) %>% 
-        ggplot() +
-        geom_sf(col=NA,fill="black")+
-        # geom_sf(data=sidewalks,fill="lightgrey")+
-        # geom_sf(data=nondorms,col=NA,fill="lightgrey")+
-        geom_sf(data=greenspace,fill="lightblue",col=NA)+
-        
-        geom_point(aes(size=cases,x=centerx,y=centery),
-                   color="darkred",fill="red",alpha=0.8,pch=21)+
-        # geom_text(aes(x=centerx,y=centery,label=cases))+
-        geom_text(data=dormlabels,aes(x=x,y=y,label=names))+
-        # geom_text_repel(aes(label=Name,x=centerx,y=centery))+
-        scale_size(limits=c(1,max(c(20,dorms3$cases),na.rm = TRUE)),breaks=c(1,10,20))+
-        theme_void()+
-        facet_wrap(.~map,nrow=1)
-
-
-
+  cap <- glue("**Figure C{fig_counter}**. Active (tested positive in 10 days prior to report end date) and cumulative (tested positive any time prior to report end date) cases by resident dorm among students living on-campus at UNH Durham.")
+  fig_counter <- fig_counter + 1
+  
 ```
 
 
