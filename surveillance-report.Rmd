@@ -1431,13 +1431,64 @@ indicatordf <-  left_join(testdf,casedf,by="campus_fac")  %>%
 ```
 
 
-```{r Table-C4-TestSubmitted}
+```{r Table-C4-TestSubmitted, fig.cap=cap}
   
   ## by role in last week, cumulative in last week and all time:
     # total tests submitted
     # unique IDs submitting (as prop of all IDs not previously positive)
     # tests per unique ID
-
+  ntest_rep <- ts_test_res %>%
+               filter(campus_fac == "UNH Durham") %>%
+               filter(testdate > report_date_minus7 & testdate <= report_date) %>%
+               group_by(user_status_fac, .drop = FALSE) %>%
+               summarise(n_tests = sum(test)) %>%
+               rename(label = user_status_fac)
+  ntest_total <- ts_test_res %>%
+                 filter(campus_fac == "UNH Durham") %>%
+                 filter(testdate > report_date_minus7 & testdate <= report_date) %>%
+                 summarise(n_tests = sum(test)) %>%
+                 mutate(label = "Total (reporting week)")
+  ntest_cum <- ts_test_res %>%
+               filter(campus_fac == "UNH Durham") %>%
+               summarise(n_tests = sum(test)) %>%
+               mutate(label = "Cumulative (all time)")
+  ntest <- bind_rows(ntest_rep, ntest_total, ntest_cum)
+  
+  nid_rep <- demo_testing_sum %>%
+             filter(campus_fac == "UNH Durham") %>%
+             group_by(user_status_fac, .drop = FALSE) %>%
+             summarise(n_id = sum(tested_7day)) %>%
+             rename(label = user_status_fac)
+  nid_total <- demo_testing_sum %>%
+               filter(campus_fac == "UNH Durham") %>%
+               summarise(n_id = sum(tested_7day)) %>%
+               mutate(label = "Total (reporting week)")
+  nid_cum <- demo_testing_sum %>%
+             filter(campus_fac == "UNH Durham") %>%
+             summarise(n_id = sum(n_test>0, na.rm=TRUE)) %>%
+             mutate(label = "Cumulative (all time)")
+  nid <- bind_rows(nid_rep, nid_total, nid_cum)
+  
+  tab_c4 <- left_join(ntest, nid) %>%
+            mutate(n_test_per_id = round(n_tests / n_id, 2)) %>%
+            mutate(label = ifelse(label=="Unknown", "Contractors and Visitors", label)) %>%
+            filter(label != "Employee") %>%
+            rename(`Total Tests Submitted` = n_tests,
+                   `Unique IDs Submitting` = n_id,
+                   `Tests Submitted per ID` = n_test_per_id,
+                   ` ` = label)
+  
+  tab_c4 %>% 
+    flextable() %>%
+    autofit() %>%
+    hline(i=4, part="body", border=fp_border(width=2)) %>%
+    bold(i=1, part="header") %>%
+    bold(j=1) %>%
+    add_footer_lines(values="All values presented for the current reporting week, unless otherwise noted.")
+  
+  cap <- glue("**Table C{tab_counter}**. Tests submitted including repeats at UNH Durham.")
+  tab_counter <- tab_counter + 1 
+  
 ```
 
 
@@ -1770,13 +1821,64 @@ indicatordf <-  left_join(testdf,casedf,by="campus_fac")  %>%
 ```
 
 
-```{r Table-D4-TestSubmitted, eval=params$concord}
+```{r Table-D4-TestSubmitted, eval=params$concord, fig.cap=cap}
   
   ## by role in last week, cumulative in last week and all time:
     # total tests submitted
     # unique IDs submitting (as prop of all IDs not previously positive)
     # tests per unique ID
-
+  ntest_rep <- ts_test_res %>%
+               filter(campus_fac == "UNH Law") %>%
+               filter(testdate > report_date_minus7 & testdate <= report_date) %>%
+               group_by(user_status_fac, .drop = FALSE) %>%
+               summarise(n_tests = sum(test)) %>%
+               rename(label = user_status_fac)
+  ntest_total <- ts_test_res %>%
+                 filter(campus_fac == "UNH Law") %>%
+                 filter(testdate > report_date_minus7 & testdate <= report_date) %>%
+                 summarise(n_tests = sum(test)) %>%
+                 mutate(label = "Total (reporting week)")
+  ntest_cum <- ts_test_res %>%
+               filter(campus_fac == "UNH Law") %>%
+               summarise(n_tests = sum(test)) %>%
+               mutate(label = "Cumulative (all time)")
+  ntest <- bind_rows(ntest_rep, ntest_total, ntest_cum)
+  
+  nid_rep <- demo_testing_sum %>%
+             filter(campus_fac == "UNH Law") %>%
+             group_by(user_status_fac, .drop = FALSE) %>%
+             summarise(n_id = sum(tested_7day)) %>%
+             rename(label = user_status_fac)
+  nid_total <- demo_testing_sum %>%
+               filter(campus_fac == "UNH Law") %>%
+               summarise(n_id = sum(tested_7day)) %>%
+               mutate(label = "Total (reporting week)")
+  nid_cum <- demo_testing_sum %>%
+             filter(campus_fac == "UNH Law") %>%
+             summarise(n_id = sum(n_test>0, na.rm=TRUE)) %>%
+             mutate(label = "Cumulative (all time)")
+  nid <- bind_rows(nid_rep, nid_total, nid_cum)
+  
+  tab_d4 <- left_join(ntest, nid) %>%
+            mutate(n_test_per_id = round(n_tests / n_id, 2)) %>%
+            mutate(label = ifelse(label=="Unknown", "Contractors and Visitors", label)) %>%
+            filter(label != "Employee") %>%
+            rename(`Total Tests Submitted` = n_tests,
+                   `Unique IDs Submitting` = n_id,
+                   `Tests Submitted per ID` = n_test_per_id,
+                   ` ` = label)
+  
+  tab_d4 %>% 
+    flextable() %>%
+    autofit() %>%
+    hline(i=4, part="body", border=fp_border(width=2)) %>%
+    bold(i=1, part="header") %>%
+    bold(j=1) %>%
+    add_footer_lines(values="All values presented for the current reporting week, unless otherwise noted.")
+  
+  cap <- glue("**Table D{tab_counter}**. Tests submitted including repeats at UNH Concord.")
+  tab_counter <- tab_counter + 1 
+  
 ```
 
 
@@ -2000,7 +2102,7 @@ indicatordf <-  left_join(testdf,casedf,by="campus_fac")  %>%
 ```
 
 
-```{r Table-E3-MostRecentLab, eval=params$manchester}
+```{r Table-E3-MostRecentLab, eval=params$manchester, fig.cap=cap}
 
   ## by role + total, last seven days: most recent result positive, neg, incon, invalid
   recent_rep_man <- demo_testing_recent %>%
@@ -2039,13 +2141,63 @@ indicatordf <-  left_join(testdf,casedf,by="campus_fac")  %>%
 ```
 
 
-```{r Table-E4-TestSubmitted, eval=params$manchester}
+```{r Table-E4-TestSubmitted, eval=params$manchester, fig.cap=cap}
   
   ## by role in last week, cumulative in last week and all time:
     # total tests submitted
     # unique IDs submitting (as prop of all IDs not previously positive)
     # tests per unique ID
-
+  ntest_rep <- ts_test_res %>%
+               filter(campus_fac == "UNH Manchester") %>%
+               filter(testdate > report_date_minus7 & testdate <= report_date) %>%
+               group_by(user_status_fac, .drop = FALSE) %>%
+               summarise(n_tests = sum(test)) %>%
+               rename(label = user_status_fac)
+  ntest_total <- ts_test_res %>%
+                 filter(campus_fac == "UNH Manchester") %>%
+                 filter(testdate > report_date_minus7 & testdate <= report_date) %>%
+                 summarise(n_tests = sum(test)) %>%
+                 mutate(label = "Total (reporting week)")
+  ntest_cum <- ts_test_res %>%
+               filter(campus_fac == "UNH Manchester") %>%
+               summarise(n_tests = sum(test)) %>%
+               mutate(label = "Cumulative (all time)")
+  ntest <- bind_rows(ntest_rep, ntest_total, ntest_cum)
+  
+  nid_rep <- demo_testing_sum %>%
+             filter(campus_fac == "UNH Manchester") %>%
+             group_by(user_status_fac, .drop = FALSE) %>%
+             summarise(n_id = sum(tested_7day)) %>%
+             rename(label = user_status_fac)
+  nid_total <- demo_testing_sum %>%
+               filter(campus_fac == "UNH Manchester") %>%
+               summarise(n_id = sum(tested_7day)) %>%
+               mutate(label = "Total (reporting week)")
+  nid_cum <- demo_testing_sum %>%
+             filter(campus_fac == "UNH Manchester") %>%
+             summarise(n_id = sum(n_test>0, na.rm=TRUE)) %>%
+             mutate(label = "Cumulative (all time)")
+  nid <- bind_rows(nid_rep, nid_total, nid_cum)
+  
+  tab_e4 <- left_join(ntest, nid) %>%
+            mutate(n_test_per_id = round(n_tests / n_id, 2)) %>%
+            mutate(label = ifelse(label=="Unknown", "Contractors and Visitors", label)) %>%
+            filter(label != "Employee") %>%
+            rename(`Total Tests Submitted` = n_tests,
+                   `Unique IDs Submitting` = n_id,
+                   `Tests Submitted per ID` = n_test_per_id,
+                   ` ` = label)
+  
+  tab_e4 %>% 
+    flextable() %>%
+    autofit() %>%
+    hline(i=4, part="body", border=fp_border(width=2)) %>%
+    bold(i=1, part="header") %>%
+    bold(j=1) %>%
+    add_footer_lines(values="All values presented for the current reporting week, unless otherwise noted.")
+  
+  cap <- glue("**Table E{tab_counter}**. Tests submitted including repeats at UNH Manchester.")
+  tab_counter <- tab_counter + 1 
 ```
 
 
