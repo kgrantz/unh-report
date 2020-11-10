@@ -1492,10 +1492,39 @@ indicatordf <-  left_join(testdf,casedf,by="campus_fac")  %>%
 ```
 
 
-```{r Table-C5-Lab}
+```{r Table-C5-Lab, fig.cap=cap}
 
   # total number tests submitted by lab, last week + current week, sparkline weekly average over time
+  tab_c5 <- ts_test_lab %>%
+            filter(campus_fac == "UNH Durham") %>%
+            filter(testdate > report_date_minus14 & testdate<=report_date) %>%
+            mutate(week = ifelse(testdate > report_date_minus7, "Current", "Previous")) %>%
+            group_by(week, laboratory_fac) %>%
+            summarise(n_test = sum(n_test),
+                      n_res = sum(n_with_res),
+                      pct_res = round(n_res/n_test*100, 1),
+                      val = glue("{n_res} ({pct_res}%)")) %>%
+            select(-n_test, -pct_res) %>%
+            pivot_wider(names_from = week, values_from = c(val, n_res)) %>%
+            mutate(pct_change = ifelse(n_res_Previous>0,
+                                       glue("{round((n_res_Current - n_res_Previous)/n_res_Previous*100, 2)}%"),
+                                       "-"))
 
+  tab_c5 %>%
+    select(laboratory_fac, val_Previous, val_Current, pct_change) %>%
+    flextable() %>%
+    set_header_labels(laboratory_fac = "",
+                      Current = glue("Reporting period \nending {report_date_str_short}"),
+                      Previous = glue("Reporting period \nending {report_date_minus7_str_short}"),
+                      pct_change = "% Change") %>%
+    autofit() %>%
+    bold(i=1, part="header") %>%
+    bold(j=1) %>%
+    add_footer_lines(values = "Percent change represents change in total test returned with results.")
+  
+  cap <- glue("**Figure C{tab_counter}**. Laboratory operations (as number of tests returned with results and percent of all tests submitted) at UNH Durham in the reporting period and in the week prior.")
+  tab_counter <- tab_counter+1
+  
 ```
 
 
@@ -1882,10 +1911,39 @@ indicatordf <-  left_join(testdf,casedf,by="campus_fac")  %>%
 ```
 
 
-```{r Table-D5-Lab, eval=params$concord}
+```{r Table-D5-Lab, eval=params$concord, fig.cap=cap}
 
   # total number tests submitted by lab, last week + current week, sparkline weekly average over time
+  tab_d5 <- ts_test_lab %>%
+            filter(campus_fac == "UNH Law") %>%
+            filter(testdate > report_date_minus14 & testdate<=report_date) %>%
+            mutate(week = ifelse(testdate > report_date_minus7, "Current", "Previous")) %>%
+            group_by(week, laboratory_fac) %>%
+            summarise(n_test = sum(n_test),
+                      n_res = sum(n_with_res),
+                      pct_res = round(n_res/n_test*100, 1),
+                      val = glue("{n_res} ({pct_res}%)")) %>%
+            select(-n_test, -pct_res) %>%
+            pivot_wider(names_from = week, values_from = c(val, n_res)) %>%
+            mutate(pct_change = ifelse(n_res_Previous>0,
+                                       glue("{round((n_res_Current - n_res_Previous)/n_res_Previous*100, 2)}%"),
+                                       "-"))
 
+  tab_d5 %>%
+    select(laboratory_fac, val_Previous, val_Current, pct_change) %>%
+    flextable() %>%
+    set_header_labels(laboratory_fac = "",
+                      Current = glue("Reporting period \nending {report_date_str_short}"),
+                      Previous = glue("Reporting period \nending {report_date_minus7_str_short}"),
+                      pct_change = "% Change") %>%
+    autofit() %>%
+    bold(i=1, part="header") %>%
+    bold(j=1) %>%
+    add_footer_lines(values = "Percent change represents change in total test returned with results.")
+  
+  cap <- glue("**Figure D{tab_counter}**. Laboratory operations (as number of tests returned with results and percent of all tests submitted) at UNH Concord in the reporting period and in the week prior.")
+  tab_counter <- tab_counter+1
+  
 ```
 
 
@@ -2201,10 +2259,39 @@ indicatordf <-  left_join(testdf,casedf,by="campus_fac")  %>%
 ```
 
 
-```{r Table-E5-Lab, eval=params$manchester}
+```{r Table-E5-Lab, eval=params$manchester, fig.cap=cap}
 
   # total number tests submitted by lab, last week + current week, sparkline weekly average over time
+  tab_d5 <- ts_test_lab %>%
+            filter(campus_fac == "UNH Manchester") %>%
+            filter(testdate > report_date_minus14 & testdate<=report_date) %>%
+            mutate(week = ifelse(testdate > report_date_minus7, "Current", "Previous")) %>%
+            group_by(week, laboratory_fac) %>%
+            summarise(n_test = sum(n_test),
+                      n_res = sum(n_with_res),
+                      pct_res = round(n_res/n_test*100, 1),
+                      val = glue("{n_res} ({pct_res}%)")) %>%
+            select(-n_test, -pct_res) %>%
+            pivot_wider(names_from = week, values_from = c(val, n_res)) %>%
+            mutate(pct_change = ifelse(n_res_Previous>0,
+                                       glue("{round((n_res_Current - n_res_Previous)/n_res_Previous*100, 2)}%"),
+                                       "-"))
 
+  tab_d5 %>%
+    select(laboratory_fac, val_Previous, val_Current, pct_change) %>%
+    flextable() %>%
+    set_header_labels(laboratory_fac = "",
+                      Current = glue("Reporting period \nending {report_date_str_short}"),
+                      Previous = glue("Reporting period \nending {report_date_minus7_str_short}"),
+                      pct_change = "% Change") %>%
+    autofit() %>%
+    bold(i=1, part="header") %>%
+    bold(j=1) %>%
+    add_footer_lines(values = "Percent change represents change in total test returned with results.")
+  
+  cap <- glue("**Figure E{tab_counter}**. Laboratory operations (as number of tests returned with results and percent of all tests submitted) at UNH Manchester in the reporting period and in the week prior.")
+  tab_counter <- tab_counter+1
+  
 ```
 
 
