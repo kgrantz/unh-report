@@ -33,6 +33,7 @@ params:
   library(sf)
   library(ggrepel)
   library(lwgeom)
+  library(officer)
   
   pick_color_threshold <- function(value, 
                                    thresholds, 
@@ -991,10 +992,46 @@ indicatordf %>% flextable() %>%
     # unique IDs submitting (as prop of all IDs not previously positive)
     # tests per unique ID
 
-
-
-
-
+  ntest_rep <- ts_test_res %>%
+               filter(testdate > report_date_minus7 & testdate <= report_date) %>%
+               group_by(user_status_fac) %>%
+               summarise(n_tests = sum(test)) %>%
+               rename(label = user_status_fac)
+  ntest_total <- ts_test_res %>%
+                 filter(testdate > report_date_minus7 & testdate <= report_date) %>%
+                 summarise(n_tests = sum(test)) %>%
+                 mutate(label = "Total (reporting week)")
+  ntest_cum <- ts_test_res %>%
+               summarise(n_tests = sum(test)) %>%
+               mutate(label = "Cumulative (all time)")
+  ntest <- bind_rows(ntest_rep, ntest_total, ntest_cum)
+  
+  nid_rep <- demo_testing_sum %>%
+             group_by(user_status_fac) %>%
+             summarise(n_id = sum(tested_7day)) %>%
+             rename(label = user_status_fac)
+  nid_total <- demo_testing_sum %>%
+               summarise(n_id = sum(tested_7day)) %>%
+               mutate(label = "Total (reporting week)")
+  nid_cum <- demo_testing_sum %>%
+             summarise(n_id = sum(n_test>0, na.rm=TRUE)) %>%
+             mutate(label = "Cumulative (all time)")
+  nid <- bind_rows(nid_rep, nid_total, nid_cum)
+  
+  tab_b3 <- left_join(ntest, nid) %>%
+            mutate(n_test_per_id = round(n_tests / n_id, 2)) %>%
+            mutate(label = ifelse(label=="Unknown", "Contractors and Visitors", label)) %>%
+            rename(`Total Tests Submitted` = n_tests,
+                   `Unique IDs Submitting` = n_id,
+                   `Tests Submitted per ID` = n_test_per_id,
+                   ` ` = label)
+  
+  tab_b3 %>% 
+    flextable() %>%
+    autofit() %>%
+    hline(i=4, part="body", border=fp_border(width=2)) %>%
+    add_footer_lines(values="All values presented for the current reporting week, unless otherwise noted.")
+  
 ```
 
 
