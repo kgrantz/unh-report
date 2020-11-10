@@ -34,6 +34,7 @@ params:
   library(ggrepel)
   library(lwgeom)
   library(officer)
+  library(tibbletime)
   
   pick_color_threshold <- function(value, 
                                    thresholds, 
@@ -78,6 +79,7 @@ params:
   
   # one week date (exclusive)
   report_date_minus7 <- report_date - 7
+  report_date_minus7_str_short <- as.character(format(report_date_minus7, format="%b %d"))
   
   # two week date
   report_date_minus14 <- report_date - 14
@@ -676,6 +678,20 @@ params:
                      group_by(testdate, campus_fac) %>%
                      summarize(n = n())
   
+  # data frame: active cases by day, by campus, by off/on campus for students only
+  rollsum <- rollify(sum, window=7)
+  ts_active_offcamp <- cases %>%
+                       filter(user_status_fac=="Student") %>%
+                       group_by(testdate, campus_fac, off_campus_fac) %>%
+                       summarize(n = n()) %>%
+                       ungroup() %>%
+                       group_by(campus_fac, off_campus_fac) %>%
+                       complete(testdate = as.Date(as.Date("2020-07-15"):report_date, origin="1970-01-01")) %>%
+                       replace_na(list(n=0)) %>%
+                       arrange(testdate) %>%
+                       mutate(active_cases = rollsum(n)) %>%
+                       ungroup()
+  
   ## data frame: number pos, neg, incon, invalid, pos+neg, by campus, role, testdate
   ts_test_res <- demo_testing %>%
                  mutate(test = 1) %>%
@@ -1191,8 +1207,10 @@ indicatordf <-  left_join(testdf,casedf,by="campus_fac")  %>%
     select(Indicator, `UNH Durham`) %>%
     filter(Indicator %in% c("Active Cases", "Active Cases per 1000", "Average number in isolation this week", "Average isolation beds in use (n, %)", "Average number in quarantine this week", "Average quarantine beds in use (n, %)")) %>%
     flextable() %>%
-    autofit() %>%
-    bold(i=1, part="header")
+    bold(i=1, part="header") %>%
+    set_header_labels(Indicator="",
+                      `UNH Durham`="Reporting Period") %>%
+    autofit() 
 
   cap <- glue("**Table C{tab_counter}**. Durham Campus Operating Conditions.")
   tab_counter <- tab_counter + 1 
@@ -1334,13 +1352,42 @@ indicatordf <-  left_join(testdf,casedf,by="campus_fac")  %>%
 ```
 
 
-```{r Table-C2-OnOffCampus}
+```{r Table-C2-OnOffCampus, fig.cap=cap}
 
   # average number daily active cases among students, by dorm vs no dorm
     # current week
     # last week
     # % change
     # sparkline % change all time
+  tab_c2 <- ts_active_cases_offcamp %>%
+            filter(campus_fac == "UNH Durham") %>%
+            filter(testdate > report_date_minus14 & testdate<=report_date) %>%
+            mutate(week = ifelse(testdate > report_date_minus7, "Current", "Previous")) %>%
+            group_by(week, off_campus_fac) %>%
+            summarise(n_active = mean(active_cases)) %>%
+            pivot_wider(names_from = week, values_from = n_active) %>%
+            mutate(pct_change = ifelse(Previous>0,
+                                       glue("{round((Current - Previous)/Previous*100, 2)}%"),
+                                       "-")) %>%
+           mutate(Previous = round(Previous, 2),
+                  Current = round(Current, 2),
+                  off_campus_fac = recode(off_campus_fac,
+                                   "On Campus" = "Dorm Listed",
+                                   "Off Campus" = "Dorm Not Listed"))
+            
+  tab_c2 %>%
+    select(off_campus_fac, Previous, Current, pct_change) %>%
+    flextable() %>%
+    set_header_labels(off_campus_fac = "",
+                      Current = glue("Reporting period \nending {report_date_str_short}"),
+                      Previous = glue("Reporting period \nending {report_date_minus7_str_short}"),
+                      pct_change = "% Change") %>%
+    autofit() %>%
+    bold(i=1, part="header") %>%
+    bold(j=1)
+  
+  cap <- glue("**Figure C{tab_counter}**. Average number of daily 'Active Cases' among students at UNH Durham in the reporting period and in the week prior.")
+  tab_counter <- tab_counter+1
 
 ```
 
@@ -1535,12 +1582,17 @@ indicatordf <-  left_join(testdf,casedf,by="campus_fac")  %>%
     # total active cases from last 10 days
     # active cases per 1000 tested
 
+  indicatordf %>% 
+    select(Indicator, `UNH Law`) %>%
+    filter(Indicator %in% c("Active Cases", "Active Cases per 1000")) %>%
+    flextable() %>%
+    bold(i=1, part="header") %>%
+    set_header_labels(Indicator="",
+                      `UNH Law`="Reporting Period") %>%
+    autofit() 
 
-indicatordf %>% select(Indicator, `UNH Law`) %>%
-        flextable() %>%
-        autofit()
-
-
+  cap <- glue("**Table D{tab_counter}**. Concord Campus Operating Conditions.")
+  tab_counter <- tab_counter + 1 
 
 ```
 
@@ -1615,7 +1667,36 @@ indicatordf %>% select(Indicator, `UNH Law`) %>%
     # last week
     # % change
     # sparkline % change all time
-
+  tab_d2 <- ts_active_cases_offcamp %>%
+            filter(campus_fac == "UNH Law") %>%
+            filter(testdate > report_date_minus14 & testdate<=report_date) %>%
+            mutate(week = ifelse(testdate > report_date_minus7, "Current", "Previous")) %>%
+            group_by(week, off_campus_fac) %>%
+            summarise(n_active = mean(active_cases)) %>%
+            pivot_wider(names_from = week, values_from = n_active) %>%
+            mutate(pct_change = ifelse(Previous>0,
+                                       glue("{round((Current - Previous)/Previous*100, 2)}%"),
+                                       "-")) %>%
+           mutate(Previous = round(Previous, 2),
+                  Current = round(Current, 2),
+                  off_campus_fac = recode(off_campus_fac,
+                                   "On Campus" = "Dorm Listed",
+                                   "Off Campus" = "Dorm Not Listed"))
+            
+  tab_d2 %>%
+    select(off_campus_fac, Previous, Current, pct_change) %>%
+    flextable() %>%
+    set_header_labels(off_campus_fac = "",
+                      Current = glue("Reporting period \nending {report_date_str_short}"),
+                      Previous = glue("Reporting period \nending {report_date_minus7_str_short}"),
+                      pct_change = "% Change") %>%
+    autofit() %>%
+    bold(i=1, part="header") %>%
+    bold(j=1)
+  
+  cap <- glue("**Figure C{tab_counter}**. Average number of daily 'Active Cases' among students at UNH Concord in the reporting period and in the week prior.")
+  tab_counter <- tab_counter+1
+  
 ```
 
 
@@ -1738,9 +1819,17 @@ indicatordf %>% select(Indicator, `UNH Law`) %>%
     # total active cases from last 10 days
     # active cases per 1000 tested
 
-indicatordf %>% select(Indicator, `UNH Law`) %>%
-        flextable() %>%
-        autofit()
+  indicatordf %>% 
+    select(Indicator, `UNH Manchester`) %>%
+    filter(Indicator %in% c("Active Cases", "Active Cases per 1000")) %>%
+    flextable() %>%
+    bold(i=1, part="header") %>%
+    set_header_labels(Indicator="",
+                      `UNH Manchester`="Reporting Period") %>%
+    autofit() 
+
+  cap <- glue("**Table E{tab_counter}**. Manchester Campus Operating Conditions.")
+  tab_counter <- tab_counter + 1 
 
 
 ```
@@ -1816,7 +1905,35 @@ indicatordf %>% select(Indicator, `UNH Law`) %>%
     # last week
     # % change
     # sparkline % change all time
-
+  tab_e2 <- ts_active_cases_offcamp %>%
+            filter(campus_fac == "UNH Manchester") %>%
+            filter(testdate > report_date_minus14 & testdate<=report_date) %>%
+            mutate(week = ifelse(testdate > report_date_minus7, "Current", "Previous")) %>%
+            group_by(week, off_campus_fac) %>%
+            summarise(n_active = mean(active_cases)) %>%
+            pivot_wider(names_from = week, values_from = n_active) %>%
+            mutate(pct_change = ifelse(Previous>0,
+                                       glue("{round((Current - Previous)/Previous*100, 2)}%"),
+                                       "-")) %>%
+           mutate(Previous = round(Previous, 2),
+                  Current = round(Current, 2),
+                  off_campus_fac = recode(off_campus_fac,
+                                   "On Campus" = "Dorm Listed",
+                                   "Off Campus" = "Dorm Not Listed"))
+            
+  tab_e2 %>%
+    select(off_campus_fac, Previous, Current, pct_change) %>%
+    flextable() %>%
+    set_header_labels(off_campus_fac = "",
+                      Current = glue("Reporting period \nending {report_date_str_short}"),
+                      Previous = glue("Reporting period \nending {report_date_minus7_str_short}"),
+                      pct_change = "% Change") %>%
+    autofit() %>%
+    bold(i=1, part="header") %>%
+    bold(j=1)
+  
+  cap <- glue("**Figure C{tab_counter}**. Average number of daily 'Active Cases' among students at UNH Manchester in the reporting period and in the week prior.")
+  tab_counter <- tab_counter+1
 ```
 
 
