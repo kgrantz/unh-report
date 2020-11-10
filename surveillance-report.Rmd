@@ -894,7 +894,7 @@ Data reported as of: `r format(Sys.Date(), "%B %d, %Y")`
             mutate(NAvgIsolBedPct = NAvgIsolBed / 59) %>%
             mutate(NAvgIsol = round(NAvgIsol, 1)) %>%
             mutate(NAvgIsolBedLabel = ifelse(campus_fac=="UNH Durham", 
-                                             glue("{round(NAvgIsolBed, 1)}, ({round(NAvgIsolBedPct*100, 1)}%)"),
+                                             glue("{round(NAvgIsolBed, 1)} ({round(NAvgIsolBedPct*100, 1)}%)"),
                                              "-")) %>%
             select(campus_fac, NAvgIsol, NAvgIsolBedLabel)
 
@@ -910,7 +910,7 @@ Data reported as of: `r format(Sys.Date(), "%B %d, %Y")`
             mutate(NAvgQuarBedPct = NAvgQuarBed / 180) %>%
             mutate(NAvgQuar = round(NAvgQuar, 1)) %>%
             mutate(NAvgQuarBedLabel = ifelse(campus_fac=="UNH Durham",
-                                             glue("{round(NAvgQuarBed, 1)}, ({round(NAvgQuarBedPct*100, 1)}%)"),
+                                             glue("{round(NAvgQuarBed, 1)} ({round(NAvgQuarBedPct*100, 1)}%)"),
                                              "-")) %>%
             select(campus_fac, NAvgQuar, NAvgQuarBedLabel)
   
@@ -938,11 +938,14 @@ indicatordf <-  left_join(testdf,casedf,by="campus_fac")  %>%
                             "NAvgQuar" = "Average number in quarantine this week",
                             "NAvgQuarBedLabel" = "Average quarantine beds in use (n, %)"
                             ))%>%
-    arrange(Indicator)
-    #make flextable
-indicatordf %>% flextable() %>%
-    autofit()
-
+    arrange(Indicator) %>%
+    rename(` ` = Indicator)
+    
+  # make flextable
+  indicatordf %>% 
+    flextable() %>%
+    autofit() %>%
+    bold(i=1, part="header")
 
  cap <- glue("Table {tab_counter}. Key indicators at each campus.")
   tab_counter <- tab_counter + 1
@@ -1030,6 +1033,8 @@ indicatordf %>% flextable() %>%
     flextable() %>%
     autofit() %>%
     hline(i=4, part="body", border=fp_border(width=2)) %>%
+    bold(i=1, part="header") %>%
+    bold(j=1) %>%
     add_footer_lines(values="All values presented for the current reporting week, unless otherwise noted.")
   
 ```
@@ -1039,6 +1044,32 @@ indicatordf %>% flextable() %>%
 
   ## all campuses combined, by role + total:
     # most recent result positive, neg, incon, invalid
+  recent_rep <- demo_testing_recent %>%
+                ungroup() %>%
+                group_by(user_status_fac) %>%
+                select(pos, neg, incon, invalid) %>%
+                summarise_all(sum)
+
+  recent_total <- demo_testing_recent %>%
+                  ungroup() %>%
+                  select(pos, neg, incon, invalid) %>%
+                  summarise_all(sum) %>%
+                  mutate(user_status_fac = "Total (reporting week)")
+  
+  tab_b4 <- bind_rows(recent_rep, recent_total) %>%
+            mutate(user_status_fac = ifelse(user_status_fac=="Unknown", "Contractors and Visitors", user_status_fac)) %>%
+            rename(`Positive` = pos,
+                   `Negative` = neg,
+                   `Inconclusive` = incon,
+                   `Invalid` = invalid,
+                   ` ` = user_status_fac)
+
+  tab_b4 %>%
+    flextable() %>%
+    autofit() %>%
+    hline(i=4, part="body", border=fp_border(width=2)) %>%
+    bold(i=1, part="header") %>%
+    bold(j=1)
   
 ```
 
