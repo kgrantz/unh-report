@@ -8,6 +8,8 @@ output:
 params:
   run_checks: TRUE # whether to run and print out basic data checks
   show_cleaning: TRUE # whether to print out basic info about data cleaning steps
+  concord: TRUE #indicate whether to run extra graphics for concord
+  manchester: TRUE #indicate whether to run extra graphics for manchester
   report_date: "2020-10-12" # date in YYYY-MM-DD
   state_conditions: "Limited Open"
 ---
@@ -830,7 +832,7 @@ Data reported as of: `r format(Sys.Date(), "%B %d, %Y")`
   
 ```
 
-### STATEWIDE CONDITIONS
+### Statewide Conditions
 
 * There are `r state_curr_cases` active cases in the state of New Hampshire. This places the reopening status at the `r pick_color_threshold_str(state_curr_cases, c(-1, 100, 1200, 1800))` level.
 * There are `r state_curr_hosp` currently hospitalized individuals in the state of New Hampshire. This places the reopening status at the `r pick_color_threshold_str(state_curr_hosp, c(-1, 25, 50, 100))` level.
@@ -988,6 +990,10 @@ indicatordf %>% flextable() %>%
     # total tests submitted
     # unique IDs submitting (as prop of all IDs not previously positive)
     # tests per unique ID
+
+
+
+
 
 ```
 
@@ -1475,7 +1481,7 @@ indicatordf %>% select(Indicator, `UNH Law`) %>%
 ```
 
 
-```{r Figure-D2-EpiCurve-7day, fig.cap=cap}
+```{r Figure-D2-EpiCurve-7day, fig.cap=cap, eval=params$concord}
 
   ## epi curve, new positive, last 7 days, by day, colored by role
   ggplot(ts_cases_role %>% filter(campus_fac == "UNH Law" & testdate <= report_date & testdate > report_date_minus7), aes(x=testdate, y=n, fill=user_status_fac)) +
@@ -1491,7 +1497,7 @@ indicatordf %>% select(Indicator, `UNH Law`) %>%
 ```
 
 
-```{r Figure-D3-TestSubmitted, fig.cap=cap}
+```{r Figure-D3-TestSubmitted, fig.cap=cap, eval=params$concord}
   
   ## by week, total tests submitted (including repeats), colored by role
   ggplot(ts_test_res_wk_role %>% filter(campus_fac=="UNH Law"), aes(x=week, y=test)) +
@@ -1504,7 +1510,7 @@ indicatordf %>% select(Indicator, `UNH Law`) %>%
 ```
 
 
-```{r Figure-D4-PropPositive}
+```{r Figure-D4-PropPositive, eval=params$concord}
 
   ## by week, # pos / (# pos + # neg)
   rng <- ceiling(max(ts_test_res_wk_camp$pct_pos[ts_test_res_wk_camp$campus_fac=="UNH Law"], na.rm = TRUE)*1000)/1000
@@ -1522,7 +1528,7 @@ indicatordf %>% select(Indicator, `UNH Law`) %>%
 ```
 
 
-```{r Table-D2-OnOffCampus}
+```{r Table-D2-OnOffCampus, eval=params$concord}
 
   # average number daily active cases among students, by dorm vs no dorm
     # current week
@@ -1533,14 +1539,14 @@ indicatordf %>% select(Indicator, `UNH Law`) %>%
 ```
 
 
-```{r Table-D3-MostRecentLab}
+```{r Table-D3-MostRecentLab, eval=params$concord}
 
   ## by role + total, last seven days: most recent result positive, neg, incon, invalid
   
 ```
 
 
-```{r Table-D4-TestSubmitted}
+```{r Table-D4-TestSubmitted, eval=params$concord}
   
   ## by role in last week, cumulative in last week and all time:
     # total tests submitted
@@ -1550,14 +1556,14 @@ indicatordf %>% select(Indicator, `UNH Law`) %>%
 ```
 
 
-```{r Table-D5-Lab}
+```{r Table-D5-Lab, eval=params$concord}
 
   # total number tests submitted by lab, last week + current week, sparkline weekly average over time
 
 ```
 
 
-```{r Figure-D5-Quar, fig.cap=cap}
+```{r Figure-D5-Quar, fig.cap=cap, eval=params$concord}
 
   ## number in quarantine, colored by quar location, by day, all time
  ggplot(ts_quar_offcamp %>% filter(campus_fac == "UNH Law"), aes(x=date, y=n, fill=location)) +
@@ -1574,7 +1580,7 @@ indicatordf %>% select(Indicator, `UNH Law`) %>%
 ```
 
 
-```{r Figure-D6-Quar-7day, fig.cap=cap}
+```{r Figure-D6-Quar-7day, fig.cap=cap, eval=params$concord}
 
   ## number in quarantine, colored by quar location, by day, last 7 days
  ggplot(ts_quar_offcamp %>% filter(campus_fac == "UNH Law" & date > report_date_minus7 & date <= report_date), aes(x=date, y=n, fill=location)) +
@@ -1591,7 +1597,7 @@ indicatordf %>% select(Indicator, `UNH Law`) %>%
 ```
 
 
-```{r Figure-D7-Isol, fig.cap=cap}
+```{r Figure-D7-Isol, fig.cap=cap, eval=params$concord}
   
   ## number in isolation, colored by isolation location, by day, all time
  ggplot(ts_isol_offcamp %>% filter(campus_fac == "UNH Law"), aes(x=date, y=n, fill=location)) +
@@ -1608,7 +1614,7 @@ indicatordf %>% select(Indicator, `UNH Law`) %>%
 ```
 
 
-```{r Figure-D8-Isol-7day, fig.cap=cap}
+```{r Figure-D8-Isol-7day, fig.cap=cap, eval=params$concord}
 
   ## number in isolation, colored by isolation location, by day, last 7 days
  ggplot(ts_isol_offcamp %>% filter(campus_fac == "UNH Law" & date > report_date_minus7 & date <= report_date), aes(x=date, y=n, fill=location)) +
@@ -1624,7 +1630,7 @@ indicatordf %>% select(Indicator, `UNH Law`) %>%
 ```
 
 
-```{r Table-D6-DetailedTable}
+```{r Table-D6-DetailedTable, eval=params$concord}
 
   # Cumulative cases, previous week cases, this week cases, % change this week
     # Total
@@ -1676,7 +1682,7 @@ indicatordf %>% select(Indicator, `UNH Law`) %>%
 ```
 
 
-```{r Figure-E2-EpiCurve-7day, fig.cap=cap}
+```{r Figure-E2-EpiCurve-7day, fig.cap=cap, eval=params$manchester}
 
   ## epi curve, new positive, last 7 days, by day, colored by role
   ggplot(ts_cases_role %>% filter(campus_fac == "UNH Manchester" & testdate <= report_date & testdate > report_date_minus7), aes(x=testdate, y=n, fill=user_status_fac)) +
@@ -1693,7 +1699,7 @@ indicatordf %>% select(Indicator, `UNH Law`) %>%
 ```
 
 
-```{r Figure-E3-TestSubmitted, fig.cap=cap}
+```{r Figure-E3-TestSubmitted, fig.cap=cap, eval=params$manchester}
   
   ## by week, total tests submitted (including repeats), colored by role
   ggplot(ts_test_res_wk_role %>% filter(campus_fac=="UNH Manchester"), aes(x=week, y=test)) +
@@ -1706,7 +1712,7 @@ indicatordf %>% select(Indicator, `UNH Law`) %>%
 ```
 
 
-```{r Figure-E4-PropPositive}
+```{r Figure-E4-PropPositive, eval=params$manchester}
 
   ## by week, # pos / (# pos + # neg)
   rng <- ceiling(max(ts_test_res_wk_camp$pct_pos[ts_test_res_wk_camp$campus_fac=="UNH Manchester"], na.rm = TRUE)*1000)/1000
@@ -1723,7 +1729,7 @@ indicatordf %>% select(Indicator, `UNH Law`) %>%
 ```
 
 
-```{r Table-E2-OnOffCampus}
+```{r Table-E2-OnOffCampus, eval=params$manchester}
 
   # average number daily active cases among students, by dorm vs no dorm
     # current week
@@ -1734,14 +1740,14 @@ indicatordf %>% select(Indicator, `UNH Law`) %>%
 ```
 
 
-```{r Table-E3-MostRecentLab}
+```{r Table-E3-MostRecentLab, eval=params$manchester}
 
   ## by role + total, last seven days: most recent result positive, neg, incon, invalid
   
 ```
 
 
-```{r Table-E4-TestSubmitted}
+```{r Table-E4-TestSubmitted, eval=params$manchester}
   
   ## by role in last week, cumulative in last week and all time:
     # total tests submitted
@@ -1751,14 +1757,14 @@ indicatordf %>% select(Indicator, `UNH Law`) %>%
 ```
 
 
-```{r Table-E5-Lab}
+```{r Table-E5-Lab, eval=params$manchester}
 
   # total number tests submitted by lab, last week + current week, sparkline weekly average over time
 
 ```
 
 
-```{r Figure-E5-Quar}
+```{r Figure-E5-Quar, eval=params$manchester}
 
   ## number in quarantine, colored by quar location, by day, all time
  ggplot(ts_quar_offcamp %>% filter(campus_fac == "UNH Manchester"), aes(x=date, y=n, fill=location)) +
@@ -1775,7 +1781,7 @@ indicatordf %>% select(Indicator, `UNH Law`) %>%
 ```
 
 
-```{r Figure-E6-Quar-7day, fig.cap=cap}
+```{r Figure-E6-Quar-7day, fig.cap=cap, eval=params$manchester}
 
   ## number in quarantine, colored by quar location, by day, last 7 days
  ggplot(ts_quar_offcamp %>% filter(campus_fac == "UNH Manchester" & date > report_date_minus7 & date <= report_date), aes(x=date, y=n, fill=location)) +
@@ -1792,7 +1798,7 @@ indicatordf %>% select(Indicator, `UNH Law`) %>%
 ```
 
 
-```{r Figure-E7-Isol, fig.cap=cap}
+```{r Figure-E7-Isol, fig.cap=cap, eval=params$manchester}
   
   ## number in isolation, colored by isolation location, by day, all time
  ggplot(ts_isol_offcamp %>% filter(campus_fac == "UNH Manchester"), aes(x=date, y=n, fill=location)) +
@@ -1808,7 +1814,7 @@ indicatordf %>% select(Indicator, `UNH Law`) %>%
 ```
 
 
-```{r Figure-E8-Isol-7day, fig.cap=cap}
+```{r Figure-E8-Isol-7day, fig.cap=cap, eval=params$manchester}
 
   ## number in isolation, colored by isolation location, by day, last 7 days
  ggplot(ts_isol_offcamp %>% filter(campus_fac == "UNH Manchester" & date > report_date_minus7 & date <= report_date), aes(x=date, y=n, fill=location)) +
@@ -1824,7 +1830,7 @@ indicatordf %>% select(Indicator, `UNH Law`) %>%
 ```
 
 
-```{r Table-E6-DetailedTable}
+```{r Table-E6-DetailedTable, eval=params$manchester}
 
   # Cumulative cases, previous week cases, this week cases, % change this week
     # Total
