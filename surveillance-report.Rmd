@@ -938,17 +938,17 @@ indicatordf <-  left_join(testdf,casedf,by="campus_fac")  %>%
                             "NAvgQuar" = "Average number in quarantine this week",
                             "NAvgQuarBedLabel" = "Average quarantine beds in use (n, %)"
                             ))%>%
-    arrange(Indicator) %>%
-    rename(` ` = Indicator)
-    
+    arrange(Indicator) 
+
   # make flextable
   indicatordf %>% 
     flextable() %>%
     autofit() %>%
-    bold(i=1, part="header")
+    bold(i=1, part="header") %>%
+    set_header_labels(Indicator="")
 
  cap <- glue("Table {tab_counter}. Key indicators at each campus.")
-  tab_counter <- tab_counter + 1
+ tab_counter <- tab_counter + 1
 
 
 ```
@@ -987,7 +987,7 @@ indicatordf <-  left_join(testdf,casedf,by="campus_fac")  %>%
 ```
 
 
-```{r Table-B3-TestSubmitted}
+```{r Table-B3-TestSubmitted, fig.cap=cap}
   
   ## all campuses combined, by role in last week:
   ## all campuses combined, cumulative in last week and all time:
@@ -1037,10 +1037,13 @@ indicatordf <-  left_join(testdf,casedf,by="campus_fac")  %>%
     bold(j=1) %>%
     add_footer_lines(values="All values presented for the current reporting week, unless otherwise noted.")
   
+  cap <- glue("**Table B{tab_counter}**. Tests submitted including repeats at all UNH campuses.")
+  tab_counter <- tab_counter + 1 
+  
 ```
 
 
-```{r Table-B4-MostRecentLab}
+```{r Table-B4-MostRecentLab, fig.cap=cap}
 
   ## all campuses combined, by role + total:
     # most recent result positive, neg, incon, invalid
@@ -1070,6 +1073,9 @@ indicatordf <-  left_join(testdf,casedf,by="campus_fac")  %>%
     hline(i=4, part="body", border=fp_border(width=2)) %>%
     bold(i=1, part="header") %>%
     bold(j=1)
+  
+  cap <- glue("**Table B{tab_counter}**. Most recent lab result for each individual submitting a sample in the reporting period at all UNH campuses.")
+  tab_counter <- tab_counter + 1 
   
 ```
 
@@ -1171,7 +1177,7 @@ indicatordf <-  left_join(testdf,casedf,by="campus_fac")  %>%
   tab_counter <- 1
 ```
 
-```{r Table-C1-DurhamCond}
+```{r Table-C1-DurhamCond, fig.cap=cap}
 
   # This Week value + Threshold Indicator, if applicable
     # total active cases from last 10 days
@@ -1181,9 +1187,15 @@ indicatordf <-  left_join(testdf,casedf,by="campus_fac")  %>%
     # average number in quarantine this week
     # average quarantine beds in use
 
-indicatordf %>% select(Indicator, `UNH Durham`) %>%
-        flextable() %>%
-        autofit()
+    indicatordf %>% 
+    select(Indicator, `UNH Durham`) %>%
+    filter(Indicator %in% c("Active Cases", "Active Cases per 1000", "Average number in isolation this week", "Average isolation beds in use (n, %)", "Average number in quarantine this week", "Average quarantine beds in use (n, %)")) %>%
+    flextable() %>%
+    autofit() %>%
+    bold(i=1, part="header")
+
+  cap <- glue("**Table C{tab_counter}**. Durham Campus Operating Conditions.")
+  tab_counter <- tab_counter + 1 
 
 ```
 
