@@ -1392,9 +1392,41 @@ indicatordf <-  left_join(testdf,casedf,by="campus_fac")  %>%
 ```
 
 
-```{r Table-C3-MostRecentLab}
+```{r Table-C3-MostRecentLab, fig.cap=cap}
 
   ## by role + total, last seven days: most recent result positive, neg, incon, invalid
+  recent_rep_dur <- demo_testing_recent %>%
+                    filter(campus_fac == "UNH Durham") %>%
+                    ungroup() %>%
+                    group_by(user_status_fac, .drop = FALSE) %>%
+                    select(pos, neg, incon, invalid) %>%
+                    summarise_all(sum)
+
+  recent_total_dur <- demo_testing_recent %>%
+                      filter(campus_fac == "UNH Durham") %>%
+                      ungroup() %>%
+                      select(pos, neg, incon, invalid) %>%
+                      summarise_all(sum) %>%
+                      mutate(user_status_fac = "Total (reporting week)")
+  
+  tab_c3 <- bind_rows(recent_rep_dur, recent_total_dur) %>%
+            filter(user_status_fac != "Employee") %>%
+            mutate(user_status_fac = ifelse(user_status_fac=="Unknown", "Contractors and Visitors", user_status_fac)) %>%
+            rename(`Positive` = pos,
+                   `Negative` = neg,
+                   `Inconclusive` = incon,
+                   `Invalid` = invalid,
+                   ` ` = user_status_fac)
+
+  tab_c3 %>%
+    flextable() %>%
+    autofit() %>%
+    hline(i=4, part="body", border=fp_border(width=2)) %>%
+    bold(i=1, part="header") %>%
+    bold(j=1)
+  
+  cap <- glue("**Table C{tab_counter}**. Most recent lab result for each individual submitting a sample in the reporting period at UNH Durham.")
+  tab_counter <- tab_counter + 1 
   
 ```
 
@@ -1433,7 +1465,7 @@ indicatordf <-  left_join(testdf,casedf,by="campus_fac")  %>%
 ```
 
 
-```{r Figure-C6-Quar-7day}
+```{r Figure-C6-Quar-7day, fig.cap=cap}
 
   ## number in quarantine, colored by quar location, by day, last 7 days
   ggplot(ts_quar_offcamp %>% filter(campus_fac == "UNH Durham" & date > report_date_minus7 & date<=report_date), aes(x=date, y=n, fill=location)) +
@@ -1576,7 +1608,7 @@ indicatordf <-  left_join(testdf,casedf,by="campus_fac")  %>%
   tab_counter <- 1
 ```
 
-```{r Table-D1-ConcordCond}
+```{r Table-D1-ConcordCond, fig.cap=cap}
 
   # This Week value + Threshold Indicator, if applicable
     # total active cases from last 10 days
@@ -1660,7 +1692,7 @@ indicatordf <-  left_join(testdf,casedf,by="campus_fac")  %>%
 ```
 
 
-```{r Table-D2-OnOffCampus, eval=params$concord}
+```{r Table-D2-OnOffCampus, eval=params$concord, fig.cap=cap}
 
   # average number daily active cases among students, by dorm vs no dorm
     # current week
@@ -1694,16 +1726,47 @@ indicatordf <-  left_join(testdf,casedf,by="campus_fac")  %>%
     bold(i=1, part="header") %>%
     bold(j=1)
   
-  cap <- glue("**Figure C{tab_counter}**. Average number of daily 'Active Cases' among students at UNH Concord in the reporting period and in the week prior.")
+  cap <- glue("**Figure D{tab_counter}**. Average number of daily 'Active Cases' among students at UNH Concord in the reporting period and in the week prior.")
   tab_counter <- tab_counter+1
   
 ```
 
 
-```{r Table-D3-MostRecentLab, eval=params$concord}
+```{r Table-D3-MostRecentLab, eval=params$concord, fig.cap=cap}
 
   ## by role + total, last seven days: most recent result positive, neg, incon, invalid
+  recent_rep_law <- demo_testing_recent %>%
+                    filter(campus_fac == "UNH Law") %>%
+                    ungroup() %>%
+                    group_by(user_status_fac, .drop = FALSE) %>%
+                    select(pos, neg, incon, invalid) %>%
+                    summarise_all(sum)
+
+  recent_total_law <- demo_testing_recent %>%
+                      filter(campus_fac == "UNH Law") %>%
+                      ungroup() %>%
+                      select(pos, neg, incon, invalid) %>%
+                      summarise_all(sum) %>%
+                      mutate(user_status_fac = "Total (reporting week)")
   
+  tab_d3 <- bind_rows(recent_rep_dur, recent_total_dur) %>%
+            filter(user_status_fac != "Employee") %>%
+            mutate(user_status_fac = ifelse(user_status_fac=="Unknown", "Contractors and Visitors", user_status_fac)) %>%
+            rename(`Positive` = pos,
+                   `Negative` = neg,
+                   `Inconclusive` = incon,
+                   `Invalid` = invalid,
+                   ` ` = user_status_fac)
+
+  tab_d3 %>%
+    flextable() %>%
+    autofit() %>%
+    hline(i=4, part="body", border=fp_border(width=2)) %>%
+    bold(i=1, part="header") %>%
+    bold(j=1)
+  
+  cap <- glue("**Table D{tab_counter}**. Most recent lab result for each individual submitting a sample in the reporting period at UNH Concord.")
+  tab_counter <- tab_counter + 1 
 ```
 
 
@@ -1940,6 +2003,38 @@ indicatordf <-  left_join(testdf,casedf,by="campus_fac")  %>%
 ```{r Table-E3-MostRecentLab, eval=params$manchester}
 
   ## by role + total, last seven days: most recent result positive, neg, incon, invalid
+  recent_rep_man <- demo_testing_recent %>%
+                    filter(campus_fac == "UNH Manchester") %>%
+                    ungroup() %>%
+                    group_by(user_status_fac, .drop = FALSE) %>%
+                    select(pos, neg, incon, invalid) %>%
+                    summarise_all(sum)
+
+  recent_total_man <- demo_testing_recent %>%
+                      filter(campus_fac == "UNH Manchester") %>%
+                      ungroup() %>%
+                      select(pos, neg, incon, invalid) %>%
+                      summarise_all(sum) %>%
+                      mutate(user_status_fac = "Total (reporting week)")
+  
+  tab_e3 <- bind_rows(recent_rep_dur, recent_total_dur) %>%
+            filter(user_status_fac != "Employee") %>%
+            mutate(user_status_fac = ifelse(user_status_fac=="Unknown", "Contractors and Visitors", user_status_fac)) %>%
+            rename(`Positive` = pos,
+                   `Negative` = neg,
+                   `Inconclusive` = incon,
+                   `Invalid` = invalid,
+                   ` ` = user_status_fac)
+
+  tab_e3 %>%
+    flextable() %>%
+    autofit() %>%
+    hline(i=4, part="body", border=fp_border(width=2)) %>%
+    bold(i=1, part="header") %>%
+    bold(j=1)
+  
+  cap <- glue("**Table E{tab_counter}**. Most recent lab result for each individual submitting a sample in the reporting period at UNH Manchester")
+  tab_counter <- tab_counter + 1 
   
 ```
 
