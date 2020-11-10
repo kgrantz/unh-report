@@ -858,7 +858,7 @@ Data reported as of: `r format(Sys.Date(), "%B %d, %Y")`
 
 ### Conditions at Three Campuses
 
-```{r Table-B1B-CampusCond, fig.cap=cap}
+```{r Table-B1B-CampusCond}
 
   # BY CAMPUS + THRESHOLD INDICATOR if applicable
     # Total tests, including repeats
@@ -871,7 +871,9 @@ Data reported as of: `r format(Sys.Date(), "%B %d, %Y")`
     # average number in quarantine this week
     # average quarantine beds in use
 
-
+  cap <- glue("Table {tab_counter}. Key indicators at each campus.")
+  tab_counter <- tab_counter + 1
+ 
   testingpop <- individualdemographics %>% 
                 group_by(campus_fac) %>%
                 summarise(pop=n())
@@ -961,11 +963,8 @@ indicatordf <-  left_join(testdf,casedf,by="campus_fac")  %>%
     flextable() %>%
     autofit() %>%
     bold(i=1, part="header") %>%
-    set_header_labels(Indicator="")
-
- cap <- glue("Table {tab_counter}. Key indicators at each campus.")
- tab_counter <- tab_counter + 1
-
+    set_header_labels(Indicator="") %>%
+    set_caption(caption = cap)
 
 ```
 
@@ -1003,14 +1002,17 @@ indicatordf <-  left_join(testdf,casedf,by="campus_fac")  %>%
 ```
 
 
-```{r Table-B3-TestSubmitted, fig.cap=cap}
+```{r Table-B3-TestSubmitted}
   
   ## all campuses combined, by role in last week:
   ## all campuses combined, cumulative in last week and all time:
     # total tests submitted
     # unique IDs submitting (as prop of all IDs not previously positive)
     # tests per unique ID
-
+  
+  cap <- glue("**Table B{tab_counter}**. Tests submitted including repeats at all UNH campuses.")
+  tab_counter <- tab_counter + 1 
+  
   ntest_rep <- ts_test_res %>%
                filter(testdate > report_date_minus7 & testdate <= report_date) %>%
                group_by(user_status_fac) %>%
@@ -1051,18 +1053,21 @@ indicatordf <-  left_join(testdf,casedf,by="campus_fac")  %>%
     hline(i=4, part="body", border=fp_border(width=2)) %>%
     bold(i=1, part="header") %>%
     bold(j=1) %>%
-    add_footer_lines(values="All values presented for the current reporting week, unless otherwise noted.")
-  
-  cap <- glue("**Table B{tab_counter}**. Tests submitted including repeats at all UNH campuses.")
-  tab_counter <- tab_counter + 1 
+    add_footer_lines(values="All values presented for the current reporting week, unless otherwise noted.") %>%
+    set_caption(caption = cap)
+
   
 ```
 
 
-```{r Table-B4-MostRecentLab, fig.cap=cap}
+```{r Table-B4-MostRecentLab}
 
   ## all campuses combined, by role + total:
     # most recent result positive, neg, incon, invalid
+  
+  cap <- glue("**Table B{tab_counter}**. Most recent lab result for each individual submitting a sample in the reporting period at all UNH campuses.")
+  tab_counter <- tab_counter + 1 
+  
   recent_rep <- demo_testing_recent %>%
                 ungroup() %>%
                 group_by(user_status_fac) %>%
@@ -1088,10 +1093,9 @@ indicatordf <-  left_join(testdf,casedf,by="campus_fac")  %>%
     autofit() %>%
     hline(i=4, part="body", border=fp_border(width=2)) %>%
     bold(i=1, part="header") %>%
-    bold(j=1)
-  
-  cap <- glue("**Table B{tab_counter}**. Most recent lab result for each individual submitting a sample in the reporting period at all UNH campuses.")
-  tab_counter <- tab_counter + 1 
+    bold(j=1) %>%
+    set_caption(caption = cap)
+
   
 ```
 
@@ -1149,6 +1153,7 @@ indicatordf <-  left_join(testdf,casedf,by="campus_fac")  %>%
       
   cap <- glue("**Figure B{fig_counter}**. Number in quarantine by day, by role, for the entire reporting period.")
   fig_counter <- fig_counter + 1
+  
 ```
 
 
@@ -1171,7 +1176,7 @@ indicatordf <-  left_join(testdf,casedf,by="campus_fac")  %>%
 ```
 
 
-```{r Figure-B7-Isol}
+```{r Figure-B7-Isol, fig.cap=cap}
   
   ## number in isolation, by role, by day, all time
   ggplot(ts_isol_role_sum, aes(x=date, y=n, fill=user_status_fac)) +
@@ -1184,6 +1189,7 @@ indicatordf <-  left_join(testdf,casedf,by="campus_fac")  %>%
       
   cap <- glue("**Figure B{fig_counter}**. Number in isolation by day, by role, for the entire reporting period.")
   fig_counter <- fig_counter + 1
+  
 ```
 
 
@@ -1193,7 +1199,7 @@ indicatordf <-  left_join(testdf,casedf,by="campus_fac")  %>%
   tab_counter <- 1
 ```
 
-```{r Table-C1-DurhamCond, fig.cap=cap}
+```{r Table-C1-DurhamCond}
 
   # This Week value + Threshold Indicator, if applicable
     # total active cases from last 10 days
@@ -1203,6 +1209,9 @@ indicatordf <-  left_join(testdf,casedf,by="campus_fac")  %>%
     # average number in quarantine this week
     # average quarantine beds in use
 
+    cap <- glue("**Table C{tab_counter}**. Durham Campus Operating Conditions.")
+    tab_counter <- tab_counter + 1 
+  
     indicatordf %>% 
     select(Indicator, `UNH Durham`) %>%
     filter(Indicator %in% c("Active Cases", "Active Cases per 1000", "Average number in isolation this week", "Average isolation beds in use (n, %)", "Average number in quarantine this week", "Average quarantine beds in use (n, %)")) %>%
@@ -1210,10 +1219,8 @@ indicatordf <-  left_join(testdf,casedf,by="campus_fac")  %>%
     bold(i=1, part="header") %>%
     set_header_labels(Indicator="",
                       `UNH Durham`="Reporting Period") %>%
-    autofit() 
-
-  cap <- glue("**Table C{tab_counter}**. Durham Campus Operating Conditions.")
-  tab_counter <- tab_counter + 1 
+    autofit() %>%
+    set_caption(caption = cap)
 
 ```
 
@@ -1231,6 +1238,7 @@ indicatordf <-  left_join(testdf,casedf,by="campus_fac")  %>%
       
   cap <- glue("**Figure C{fig_counter}**. Newly reported positive cases, by testing date, in UNH Durham.")
   fig_counter <- fig_counter + 1
+  
 ```
 
 
@@ -1280,7 +1288,6 @@ indicatordf <-  left_join(testdf,casedf,by="campus_fac")  %>%
   cap <- glue("**Figure C{fig_counter}**. Proportion of positive tests over all negative and positive tests in UNH Durham.")
   fig_counter <- fig_counter + 1
   
-
 ```
 
 
@@ -1352,13 +1359,17 @@ indicatordf <-  left_join(testdf,casedf,by="campus_fac")  %>%
 ```
 
 
-```{r Table-C2-OnOffCampus, fig.cap=cap}
+```{r Table-C2-OnOffCampus}
 
   # average number daily active cases among students, by dorm vs no dorm
     # current week
     # last week
     # % change
     # sparkline % change all time
+  
+  cap <- glue("**Figure C{tab_counter}**. Average number of daily 'Active Cases' among students at UNH Durham in the reporting period and in the week prior.")
+  tab_counter <- tab_counter+1
+  
   tab_c2 <- ts_active_offcamp %>%
             filter(campus_fac == "UNH Durham") %>%
             filter(testdate > report_date_minus14 & testdate<=report_date) %>%
@@ -1384,16 +1395,17 @@ indicatordf <-  left_join(testdf,casedf,by="campus_fac")  %>%
                       pct_change = "% Change") %>%
     autofit() %>%
     bold(i=1, part="header") %>%
-    bold(j=1)
-  
-  cap <- glue("**Figure C{tab_counter}**. Average number of daily 'Active Cases' among students at UNH Durham in the reporting period and in the week prior.")
-  tab_counter <- tab_counter+1
+    bold(j=1) %>%
+    set_caption(caption = cap)
 
 ```
 
 
-```{r Table-C3-MostRecentLab, fig.cap=cap}
+```{r Table-C3-MostRecentLab}
 
+  cap <- glue("**Table C{tab_counter}**. Most recent lab result for each individual submitting a sample in the reporting period at UNH Durham.")
+  tab_counter <- tab_counter + 1 
+  
   ## by role + total, last seven days: most recent result positive, neg, incon, invalid
   recent_rep_dur <- demo_testing_recent %>%
                     filter(campus_fac == "UNH Durham") %>%
@@ -1423,20 +1435,22 @@ indicatordf <-  left_join(testdf,casedf,by="campus_fac")  %>%
     autofit() %>%
     hline(i=4, part="body", border=fp_border(width=2)) %>%
     bold(i=1, part="header") %>%
-    bold(j=1)
-  
-  cap <- glue("**Table C{tab_counter}**. Most recent lab result for each individual submitting a sample in the reporting period at UNH Durham.")
-  tab_counter <- tab_counter + 1 
+    bold(j=1) %>%
+    set_caption(caption = cap)
   
 ```
 
 
-```{r Table-C4-TestSubmitted, fig.cap=cap}
+```{r Table-C4-TestSubmitted}
   
   ## by role in last week, cumulative in last week and all time:
     # total tests submitted
     # unique IDs submitting (as prop of all IDs not previously positive)
     # tests per unique ID
+  
+  cap <- glue("**Table C{tab_counter}**. Tests submitted including repeats at UNH Durham.")
+  tab_counter <- tab_counter + 1 
+  
   ntest_rep <- ts_test_res %>%
                filter(campus_fac == "UNH Durham") %>%
                filter(testdate > report_date_minus7 & testdate <= report_date) %>%
@@ -1484,16 +1498,17 @@ indicatordf <-  left_join(testdf,casedf,by="campus_fac")  %>%
     hline(i=4, part="body", border=fp_border(width=2)) %>%
     bold(i=1, part="header") %>%
     bold(j=1) %>%
-    add_footer_lines(values="All values presented for the current reporting week, unless otherwise noted.")
-  
-  cap <- glue("**Table C{tab_counter}**. Tests submitted including repeats at UNH Durham.")
-  tab_counter <- tab_counter + 1 
+    add_footer_lines(values="All values presented for the current reporting week, unless otherwise noted.") %>%
+    set_caption(caption = cap)
   
 ```
 
 
-```{r Table-C5-Lab, fig.cap=cap}
+```{r Table-C5-Lab}
 
+  cap <- glue("**Figure C{tab_counter}**. Laboratory operations (as number of tests returned with results and percent of all tests submitted) at UNH Durham in the reporting period and in the week prior.")
+  tab_counter <- tab_counter+1
+  
   # total number tests submitted by lab, last week + current week, sparkline weekly average over time
   tab_c5 <- ts_test_lab %>%
             filter(campus_fac == "UNH Durham") %>%
@@ -1520,10 +1535,8 @@ indicatordf <-  left_join(testdf,casedf,by="campus_fac")  %>%
     autofit() %>%
     bold(i=1, part="header") %>%
     bold(j=1) %>%
-    add_footer_lines(values = "Percent change represents change in total test returned with results.")
-  
-  cap <- glue("**Figure C{tab_counter}**. Laboratory operations (as number of tests returned with results and percent of all tests submitted) at UNH Durham in the reporting period and in the week prior.")
-  tab_counter <- tab_counter+1
+    add_footer_lines(values = "Percent change represents change in total test returned with results.") %>%
+    set_caption(caption = cap)
   
 ```
 
@@ -1558,6 +1571,7 @@ indicatordf <-  left_join(testdf,casedf,by="campus_fac")  %>%
       
   cap <- glue("**Figure C{fig_counter}**. Number in quarantine by day, by location, for the reporting week.")
   fig_counter <- fig_counter + 1
+  
 ```
 
 
@@ -1613,7 +1627,7 @@ indicatordf <-  left_join(testdf,casedf,by="campus_fac")  %>%
 ```
 
 
-```{r Figure-C10-Isol-7day}
+```{r Figure-C10-Isol-7day, fig.cap=cap}
 
   ## number in isolation, colored by isolation location, by day, last 7 days
  ggplot(ts_isol_offcamp %>% filter(campus_fac == "UNH Durham" & date > report_date_minus7 & date <= report_date), aes(x=date, y=n, fill=location)) +
@@ -1648,7 +1662,7 @@ indicatordf <-  left_join(testdf,casedf,by="campus_fac")  %>%
 ```
 
 
-```{r Figure-C12-IsolBeds-7day}
+```{r Figure-C12-IsolBeds-7day, fig.cap=cap}
 
   ## number isolation beds in use by day, past 7 days
  ggplot(ts_isol_campus %>% filter(campus_fac == "UNH Durham" & date > report_date_minus7 & date <= report_date), aes(x=date, y=nbed)) +
@@ -1666,7 +1680,7 @@ indicatordf <-  left_join(testdf,casedf,by="campus_fac")  %>%
 ```
 
 
-```{r Table-C6-DetailedTable, fig.cap=cap}
+```{r Table-C6-DetailedTable}
 
   # Cumulative cases, previous week cases, this week cases, % change this week
     # Total
@@ -1677,6 +1691,10 @@ indicatordf <-  left_join(testdf,casedf,by="campus_fac")  %>%
     # by sex at birth
     # by dorm area
     # by college
+  
+  cap <- glue("**Table C{tab_counter}**. Cumulative and current cases at UNH Durham.")
+  tab_counter <- tab_counter + 1 
+  
   cases_dur <- cases %>%
                filter(campus_fac == "UNH Durham") %>%
                mutate(level = "Total") %>%
@@ -1756,10 +1774,8 @@ indicatordf <-  left_join(testdf,casedf,by="campus_fac")  %>%
                       pct_change = "% Change") %>%
     bold(i=1, part="header") %>%
     bold(j=1) %>%
-    autofit()
-  
-  cap <- glue("**Table C{tab_counter}**. Cumulative and current cases at UNH Durham.")
-  tab_counter <- tab_counter + 1 
+    autofit() %>%
+    set_caption(caption=cap)
   
 ```
 
@@ -1771,12 +1787,15 @@ indicatordf <-  left_join(testdf,casedf,by="campus_fac")  %>%
   tab_counter <- 1
 ```
 
-```{r Table-D1-ConcordCond, fig.cap=cap}
+```{r Table-D1-ConcordCond}
 
   # This Week value + Threshold Indicator, if applicable
     # total active cases from last 10 days
     # active cases per 1000 tested
 
+  cap <- glue("**Table D{tab_counter}**. Concord Campus Operating Conditions.")
+  tab_counter <- tab_counter + 1 
+  
   indicatordf %>% 
     select(Indicator, `UNH Law`) %>%
     filter(Indicator %in% c("Active Cases", "Active Cases per 1000")) %>%
@@ -1784,10 +1803,8 @@ indicatordf <-  left_join(testdf,casedf,by="campus_fac")  %>%
     bold(i=1, part="header") %>%
     set_header_labels(Indicator="",
                       `UNH Law`="Reporting Period") %>%
-    autofit() 
-
-  cap <- glue("**Table D{tab_counter}**. Concord Campus Operating Conditions.")
-  tab_counter <- tab_counter + 1 
+    autofit() %>%
+    set_caption(caption = cap)
 
 ```
 
@@ -1855,13 +1872,17 @@ indicatordf <-  left_join(testdf,casedf,by="campus_fac")  %>%
 ```
 
 
-```{r Table-D2-OnOffCampus, eval=params$concord, fig.cap=cap}
+```{r Table-D2-OnOffCampus, eval=params$concord}
 
   # average number daily active cases among students, by dorm vs no dorm
     # current week
     # last week
     # % change
     # sparkline % change all time
+  
+  cap <- glue("**Figure D{tab_counter}**. Average number of daily 'Active Cases' among students at UNH Concord in the reporting period and in the week prior.")
+  tab_counter <- tab_counter+1
+  
   tab_d2 <- ts_active_offcamp %>%
             filter(campus_fac == "UNH Law") %>%
             filter(testdate > report_date_minus14 & testdate<=report_date) %>%
@@ -1887,17 +1908,18 @@ indicatordf <-  left_join(testdf,casedf,by="campus_fac")  %>%
                       pct_change = "% Change") %>%
     autofit() %>%
     bold(i=1, part="header") %>%
-    bold(j=1)
-  
-  cap <- glue("**Figure D{tab_counter}**. Average number of daily 'Active Cases' among students at UNH Concord in the reporting period and in the week prior.")
-  tab_counter <- tab_counter+1
+    bold(j=1) %>%
+    set_caption(caption = cap)
   
 ```
 
 
-```{r Table-D3-MostRecentLab, eval=params$concord, fig.cap=cap}
+```{r Table-D3-MostRecentLab, eval=params$concord}
 
   ## by role + total, last seven days: most recent result positive, neg, incon, invalid
+  cap <- glue("**Table D{tab_counter}**. Most recent lab result for each individual submitting a sample in the reporting period at UNH Concord.")
+  tab_counter <- tab_counter + 1 
+  
   recent_rep_law <- demo_testing_recent %>%
                     filter(campus_fac == "UNH Law") %>%
                     ungroup() %>%
@@ -1926,19 +1948,22 @@ indicatordf <-  left_join(testdf,casedf,by="campus_fac")  %>%
     autofit() %>%
     hline(i=4, part="body", border=fp_border(width=2)) %>%
     bold(i=1, part="header") %>%
-    bold(j=1)
+    bold(j=1) %>%
+    set_caption(caption=cap)
   
-  cap <- glue("**Table D{tab_counter}**. Most recent lab result for each individual submitting a sample in the reporting period at UNH Concord.")
-  tab_counter <- tab_counter + 1 
 ```
 
 
-```{r Table-D4-TestSubmitted, eval=params$concord, fig.cap=cap}
+```{r Table-D4-TestSubmitted, eval=params$concord}
   
   ## by role in last week, cumulative in last week and all time:
     # total tests submitted
     # unique IDs submitting (as prop of all IDs not previously positive)
     # tests per unique ID
+  
+  cap <- glue("**Table D{tab_counter}**. Tests submitted including repeats at UNH Concord.")
+  tab_counter <- tab_counter + 1 
+  
   ntest_rep <- ts_test_res %>%
                filter(campus_fac == "UNH Law") %>%
                filter(testdate > report_date_minus7 & testdate <= report_date) %>%
@@ -1986,17 +2011,19 @@ indicatordf <-  left_join(testdf,casedf,by="campus_fac")  %>%
     hline(i=4, part="body", border=fp_border(width=2)) %>%
     bold(i=1, part="header") %>%
     bold(j=1) %>%
-    add_footer_lines(values="All values presented for the current reporting week, unless otherwise noted.")
-  
-  cap <- glue("**Table D{tab_counter}**. Tests submitted including repeats at UNH Concord.")
-  tab_counter <- tab_counter + 1 
+    add_footer_lines(values="All values presented for the current reporting week, unless otherwise noted.") %>%
+    set_caption(caption=cap)
   
 ```
 
 
-```{r Table-D5-Lab, eval=params$concord, fig.cap=cap}
+```{r Table-D5-Lab, eval=params$concord}
 
   # total number tests submitted by lab, last week + current week, sparkline weekly average over time
+  
+  cap <- glue("**Figure D{tab_counter}**. Laboratory operations (as number of tests returned with results and percent of all tests submitted) at UNH Concord in the reporting period and in the week prior.")
+  tab_counter <- tab_counter+1
+  
   tab_d5 <- ts_test_lab %>%
             filter(campus_fac == "UNH Law") %>%
             filter(testdate > report_date_minus14 & testdate<=report_date) %>%
@@ -2022,10 +2049,8 @@ indicatordf <-  left_join(testdf,casedf,by="campus_fac")  %>%
     autofit() %>%
     bold(i=1, part="header") %>%
     bold(j=1) %>%
-    add_footer_lines(values = "Percent change represents change in total test returned with results.")
-  
-  cap <- glue("**Figure D{tab_counter}**. Laboratory operations (as number of tests returned with results and percent of all tests submitted) at UNH Concord in the reporting period and in the week prior.")
-  tab_counter <- tab_counter+1
+    add_footer_lines(values = "Percent change represents change in total test returned with results.") %>%
+    set_caption(caption=cap)
   
 ```
 
@@ -2094,10 +2119,11 @@ indicatordf <-  left_join(testdf,casedf,by="campus_fac")  %>%
       
   cap <- glue("Figure D{fig_counter}. Number in isolation by day, by location, for the reporting week.")
   fig_counter <- fig_counter + 1
+  
 ```
 
 
-```{r Table-D6-DetailedTable, eval=params$concord, fig.cap=cap}
+```{r Table-D6-DetailedTable, eval=params$concord}
 
   # Cumulative cases, previous week cases, this week cases, % change this week
     # Total
@@ -2108,6 +2134,10 @@ indicatordf <-  left_join(testdf,casedf,by="campus_fac")  %>%
     # by sex at birth
     # by dorm area
     # by college
+  
+  cap <- glue("**Table D{tab_counter}**. Cumulative and current cases at UNH Concord")
+  tab_counter <- tab_counter + 1 
+  
   cases_law <- cases %>%
                filter(campus_fac == "UNH Law") %>%
                mutate(level = "Total") %>%
@@ -2187,10 +2217,8 @@ indicatordf <-  left_join(testdf,casedf,by="campus_fac")  %>%
                       pct_change = "% Change") %>%
     bold(i=1, part="header") %>%
     bold(j=1) %>%
-    autofit()
-  
-  cap <- glue("**Table D{tab_counter}**. Cumulative and current cases at UNH Concord")
-  tab_counter <- tab_counter + 1 
+    autofit() %>%
+    set_caption(caption=cap)
   
 ```
 
@@ -2208,6 +2236,9 @@ indicatordf <-  left_join(testdf,casedf,by="campus_fac")  %>%
     # total active cases from last 10 days
     # active cases per 1000 tested
 
+  cap <- glue("**Table E{tab_counter}**. Manchester Campus Operating Conditions.")
+  tab_counter <- tab_counter + 1 
+  
   indicatordf %>% 
     select(Indicator, `UNH Manchester`) %>%
     filter(Indicator %in% c("Active Cases", "Active Cases per 1000")) %>%
@@ -2215,11 +2246,8 @@ indicatordf <-  left_join(testdf,casedf,by="campus_fac")  %>%
     bold(i=1, part="header") %>%
     set_header_labels(Indicator="",
                       `UNH Manchester`="Reporting Period") %>%
-    autofit() 
-
-  cap <- glue("**Table E{tab_counter}**. Manchester Campus Operating Conditions.")
-  tab_counter <- tab_counter + 1 
-
+    autofit() %>%
+    set_caption(caption=cap)
 
 ```
 
@@ -2237,6 +2265,7 @@ indicatordf <-  left_join(testdf,casedf,by="campus_fac")  %>%
       
   cap <- glue("Figure E{fig_counter}. Newly reported positive cases, by testing date, in UNH Manchester.")
   fig_counter <- fig_counter + 1
+  
 ```
 
 
@@ -2267,10 +2296,11 @@ indicatordf <-  left_join(testdf,casedf,by="campus_fac")  %>%
   
   cap <- glue("Figure E{fig_counter}. Total tests submitted per week in UNH Manchester. Note the different y-axis scales.")
   fig_counter <- fig_counter + 1
+  
 ```
 
 
-```{r Figure-E4-PropPositive, eval=params$manchester}
+```{r Figure-E4-PropPositive, fig.cap=cap, eval=params$manchester}
 
   ## by week, # pos / (# pos + # neg)
   rng <- ceiling(max(ts_test_res_wk_camp$pct_pos[ts_test_res_wk_camp$campus_fac=="UNH Manchester"], na.rm = TRUE)*1000)/1000
@@ -2284,6 +2314,7 @@ indicatordf <-  left_join(testdf,casedf,by="campus_fac")  %>%
     
   cap <- glue("Figure E{fig_counter}. Proportion of positive tests over all negative and positive tests in UNH Manchester")
   fig_counter <- fig_counter + 1
+  
 ```
 
 
@@ -2294,6 +2325,10 @@ indicatordf <-  left_join(testdf,casedf,by="campus_fac")  %>%
     # last week
     # % change
     # sparkline % change all time
+  
+  cap <- glue("**Figure C{tab_counter}**. Average number of daily 'Active Cases' among students at UNH Manchester in the reporting period and in the week prior.")
+  tab_counter <- tab_counter+1
+  
   tab_e2 <- ts_active_offcamp %>%
             filter(campus_fac == "UNH Manchester") %>%
             filter(testdate > report_date_minus14 & testdate<=report_date) %>%
@@ -2319,16 +2354,19 @@ indicatordf <-  left_join(testdf,casedf,by="campus_fac")  %>%
                       pct_change = "% Change") %>%
     autofit() %>%
     bold(i=1, part="header") %>%
-    bold(j=1)
-  
-  cap <- glue("**Figure C{tab_counter}**. Average number of daily 'Active Cases' among students at UNH Manchester in the reporting period and in the week prior.")
-  tab_counter <- tab_counter+1
+    bold(j=1) %>%
+    set_caption(caption=cap)
+
 ```
 
 
-```{r Table-E3-MostRecentLab, eval=params$manchester, fig.cap=cap}
+```{r Table-E3-MostRecentLab, eval=params$manchester}
 
   ## by role + total, last seven days: most recent result positive, neg, incon, invalid
+    
+  cap <- glue("**Table E{tab_counter}**. Most recent lab result for each individual submitting a sample in the reporting period at UNH Manchester")
+  tab_counter <- tab_counter + 1 
+  
   recent_rep_man <- demo_testing_recent %>%
                     filter(campus_fac == "UNH Manchester") %>%
                     ungroup() %>%
@@ -2357,20 +2395,22 @@ indicatordf <-  left_join(testdf,casedf,by="campus_fac")  %>%
     autofit() %>%
     hline(i=4, part="body", border=fp_border(width=2)) %>%
     bold(i=1, part="header") %>%
-    bold(j=1)
-  
-  cap <- glue("**Table E{tab_counter}**. Most recent lab result for each individual submitting a sample in the reporting period at UNH Manchester")
-  tab_counter <- tab_counter + 1 
+    bold(j=1) %>%
+    set_caption(caption=cap)
   
 ```
 
 
-```{r Table-E4-TestSubmitted, eval=params$manchester, fig.cap=cap}
+```{r Table-E4-TestSubmitted, eval=params$manchester}
   
   ## by role in last week, cumulative in last week and all time:
     # total tests submitted
     # unique IDs submitting (as prop of all IDs not previously positive)
     # tests per unique ID
+  
+  cap <- glue("**Table E{tab_counter}**. Tests submitted including repeats at UNH Manchester.")
+  tab_counter <- tab_counter + 1 
+  
   ntest_rep <- ts_test_res %>%
                filter(campus_fac == "UNH Manchester") %>%
                filter(testdate > report_date_minus7 & testdate <= report_date) %>%
@@ -2418,16 +2458,19 @@ indicatordf <-  left_join(testdf,casedf,by="campus_fac")  %>%
     hline(i=4, part="body", border=fp_border(width=2)) %>%
     bold(i=1, part="header") %>%
     bold(j=1) %>%
-    add_footer_lines(values="All values presented for the current reporting week, unless otherwise noted.")
-  
-  cap <- glue("**Table E{tab_counter}**. Tests submitted including repeats at UNH Manchester.")
-  tab_counter <- tab_counter + 1 
+    add_footer_lines(values="All values presented for the current reporting week, unless otherwise noted.") %>%
+    set_caption(caption=cap)
+
 ```
 
 
-```{r Table-E5-Lab, eval=params$manchester, fig.cap=cap}
+```{r Table-E5-Lab, eval=params$manchester}
 
   # total number tests submitted by lab, last week + current week, sparkline weekly average over time
+    
+  cap <- glue("**Figure E{tab_counter}**. Laboratory operations (as number of tests returned with results and percent of all tests submitted) at UNH Manchester in the reporting period and in the week prior.")
+  tab_counter <- tab_counter+1
+  
   tab_d5 <- ts_test_lab %>%
             filter(campus_fac == "UNH Manchester") %>%
             filter(testdate > report_date_minus14 & testdate<=report_date) %>%
@@ -2453,15 +2496,13 @@ indicatordf <-  left_join(testdf,casedf,by="campus_fac")  %>%
     autofit() %>%
     bold(i=1, part="header") %>%
     bold(j=1) %>%
-    add_footer_lines(values = "Percent change represents change in total test returned with results.")
-  
-  cap <- glue("**Figure E{tab_counter}**. Laboratory operations (as number of tests returned with results and percent of all tests submitted) at UNH Manchester in the reporting period and in the week prior.")
-  tab_counter <- tab_counter+1
+    add_footer_lines(values = "Percent change represents change in total test returned with results.") %>%
+    set_caption(caption=cap)
   
 ```
 
 
-```{r Figure-E5-Quar, eval=params$manchester}
+```{r Figure-E5-Quar, fig.cap=cap, eval=params$manchester}
 
   ## number in quarantine, colored by quar location, by day, all time
  ggplot(ts_quar_offcamp %>% filter(campus_fac == "UNH Manchester"), aes(x=date, y=n, fill=location)) +
@@ -2527,7 +2568,7 @@ indicatordf <-  left_join(testdf,casedf,by="campus_fac")  %>%
 ```
 
 
-```{r Table-E6-DetailedTable, eval=params$manchester, fig.cap=cap}
+```{r Table-E6-DetailedTable, eval=params$manchester}
 
   # Cumulative cases, previous week cases, this week cases, % change this week
     # Total
@@ -2539,6 +2580,9 @@ indicatordf <-  left_join(testdf,casedf,by="campus_fac")  %>%
     # by dorm area
     # by college
 
+  cap <- glue("**Table E{tab_counter}**. Cumulative and current cases at UNH Manchester.")
+  tab_counter <- tab_counter + 1  
+  
   cases_man <- cases %>%
                filter(campus_fac == "UNH Manchester") %>%
                mutate(level = "Total") %>%
@@ -2618,10 +2662,8 @@ indicatordf <-  left_join(testdf,casedf,by="campus_fac")  %>%
                       pct_change = "% Change") %>%
     bold(i=1, part="header") %>%
     bold(j=1) %>%
-    autofit()
-
-  cap <- glue("**Table E{tab_counter}**. Cumulative and current cases at UNH Manchester.")
-  tab_counter <- tab_counter + 1  
+    autofit() %>%
+    set_caption(caption=cap)
   
 ```
 
