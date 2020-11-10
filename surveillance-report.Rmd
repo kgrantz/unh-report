@@ -1359,7 +1359,7 @@ indicatordf <-  left_join(testdf,casedf,by="campus_fac")  %>%
     # last week
     # % change
     # sparkline % change all time
-  tab_c2 <- ts_active_cases_offcamp %>%
+  tab_c2 <- ts_active_offcamp %>%
             filter(campus_fac == "UNH Durham") %>%
             filter(testdate > report_date_minus14 & testdate<=report_date) %>%
             mutate(week = ifelse(testdate > report_date_minus7, "Current", "Previous")) %>%
@@ -1862,7 +1862,7 @@ indicatordf <-  left_join(testdf,casedf,by="campus_fac")  %>%
     # last week
     # % change
     # sparkline % change all time
-  tab_d2 <- ts_active_cases_offcamp %>%
+  tab_d2 <- ts_active_offcamp %>%
             filter(campus_fac == "UNH Law") %>%
             filter(testdate > report_date_minus14 & testdate<=report_date) %>%
             mutate(week = ifelse(testdate > report_date_minus7, "Current", "Previous")) %>%
@@ -2294,7 +2294,7 @@ indicatordf <-  left_join(testdf,casedf,by="campus_fac")  %>%
     # last week
     # % change
     # sparkline % change all time
-  tab_e2 <- ts_active_cases_offcamp %>%
+  tab_e2 <- ts_active_offcamp %>%
             filter(campus_fac == "UNH Manchester") %>%
             filter(testdate > report_date_minus14 & testdate<=report_date) %>%
             mutate(week = ifelse(testdate > report_date_minus7, "Current", "Previous")) %>%
