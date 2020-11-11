@@ -2,7 +2,7 @@
 output: 
   html_document:
     toc: TRUE
-    toc_depth: 2
+    toc_depth: 3
     toc_float: TRUE
     theme: journal
 params:
@@ -84,6 +84,9 @@ params:
   # two week date
   report_date_minus14 <- report_date - 14
 
+  # common axis limits
+  xaxis_reporting <- c(start_date-0.5, report_date+0.5)
+  xaxis_entire <- c(as.Date("2020-08-10")-0.5, report_date+0.5)
 ```
 
 
@@ -387,6 +390,19 @@ params:
   isolationquarantine <- isolationquarantine %>%
                          mutate(quar_isol_bed = ifelse(location=="Campus", 1, 0)) %>%
                          rename(dorm_isol = dorm)
+  
+  isolationquarantine <- isolationquarantine %>%
+                         mutate(location_num = recode(location,
+                                                      "Campus" = 1,
+                                                       "Home" = 2,
+                                                       "Off-Campus - A/O" = 3,
+                                                       "Off-Campus - Durham" = 4,
+                                                       .default=5)) %>%
+                         mutate(location_old = location,
+                                location = factor(location_num,
+                                                  levels = 1:5,
+                                                  labels = c("Campus", "Home", "Off-Campus - A/O", "Off-Campus - Durham", "Other Campus/Unknown")))
+    
   
 ```
 
@@ -831,6 +847,7 @@ End: `r report_date_str_long`
 
 Data reported as of: `r format(Sys.Date(), "%B %d, %Y")`
 
+-----------------------------------------
 
 ## SECTION A: EXECUTIVE SUMMARY
 
@@ -867,6 +884,8 @@ be close to overwhelmed.
 * One new case was reported this week.
 
 
+-----------------------------------------
+
 ## SECTION B: UNIVERSITY-WIDE SITUATION
 
 ```{r Table-B1A-StateCond}
@@ -892,12 +911,16 @@ be close to overwhelmed.
   
 ```
 
+-----------------------------------------
+
 ### Statewide Conditions
 
 * There are `r state_curr_cases` active cases in the state of New Hampshire. This places the reopening status at the `r pick_color_threshold_str(state_curr_cases, c(-1, 100, 1200, 1800))` level.
 * There are `r state_curr_hosp` currently hospitalized individuals in the state of New Hampshire. This places the reopening status at the `r pick_color_threshold_str(state_curr_hosp, c(-1, 25, 50, 100))` level.
 * The current state restrictions are `r state_curr_cond`.
 * `r statedatetimeupdated`.
+
+-----------------------------------------
 
 ### Conditions at Three Campuses
 
@@ -1011,6 +1034,9 @@ indicatordf <-  left_join(testdf,casedf,by="campus_fac")  %>%
 
 ```
 
+-----------------------------------------
+
+### Confirmed Cases and Testing Results
 
 ```{r Figure-B1-EpiCurve, fig.cap = cap}
 
@@ -1020,7 +1046,7 @@ indicatordf <-  left_join(testdf,casedf,by="campus_fac")  %>%
     theme_bw()+
     scale_fill_brewer("Campus",type = "qual") +
     scale_y_continuous(name = "Cases", breaks=breaks_pretty()) +
-    scale_x_date(name="", date_breaks = "2 weeks") +
+    scale_x_date(name="", date_breaks = "2 weeks", limits = xaxis_entire) +
     theme(legend.position = "bottom", legend.title = element_blank())
       
   cap <- glue("**Figure B{fig_counter}**. Newly reported positive cases, by testing date, in each campus.")
@@ -1036,7 +1062,7 @@ indicatordf <-  left_join(testdf,casedf,by="campus_fac")  %>%
     theme_bw()+
     scale_fill_brewer("Campus",type = "qual") +
     scale_y_continuous(name = "Cases", breaks=breaks_pretty()) +
-    scale_x_date(name="", breaks = seq(report_date_minus7, report_date, 1)) +
+    scale_x_date(name="", breaks = seq(report_date_minus7, report_date, 1), limits = xaxis_reporting) +
     theme(legend.position = "bottom", legend.title = element_blank())
       
   cap <- glue("**Figure B{fig_counter}**. Newly reported positive cases, by testing date, in each campus for the reporting period. Any campus not displayed had no reported positive cases in this period.")
@@ -1167,7 +1193,10 @@ indicatordf <-  left_join(testdf,casedf,by="campus_fac")  %>%
   
 ```
 		
-		
+-----------------------------------------
+
+### Quarantine and Isolation Across Campuses
+
 ```{r Figure-B4-Quar-7day, fig.cap=cap}
 
   ts_quar_role_sum <- ts_quar_role %>% select(-campus_fac) %>% group_by(date, user_status_fac) %>% summarise_all(sum)
@@ -1178,7 +1207,7 @@ indicatordf <-  left_join(testdf,casedf,by="campus_fac")  %>%
     theme_bw()+
     scale_fill_brewer("",type = "qual") +
     scale_y_continuous(name = "", breaks=breaks_pretty()) +
-    scale_x_date(name="", date_breaks = "1 day") +
+    scale_x_date(name="", date_breaks = "1 day", limits = xaxis_reporting) +
     theme(legend.position = "bottom", legend.title = element_blank())
       
   cap <- glue("**Figure B{fig_counter}**. Number in quarantine by day, by role, for the reporting week.")
@@ -1195,7 +1224,7 @@ indicatordf <-  left_join(testdf,casedf,by="campus_fac")  %>%
     theme_bw()+
     scale_fill_brewer("",type = "qual") +
     scale_y_continuous(name = "", breaks=breaks_pretty()) +
-    scale_x_date(name="", breaks="2 weeks") +
+    scale_x_date(name="", breaks="2 weeks", limits = xaxis_entire) +
     theme(legend.position = "bottom", legend.title = element_blank())
       
   cap <- glue("**Figure B{fig_counter}**. Number in quarantine by day, by role, for the entire reporting period.")
@@ -1214,7 +1243,7 @@ indicatordf <-  left_join(testdf,casedf,by="campus_fac")  %>%
     theme_bw()+
     scale_fill_brewer("",type = "qual") +
     scale_y_continuous(name = "", breaks=breaks_pretty()) +
-    scale_x_date(name="", breaks="1 day") +
+    scale_x_date(name="", breaks="1 day", limits = xaxis_reporting) +
     theme(legend.position = "bottom", legend.title = element_blank())
       
   cap <- glue("**Figure B{fig_counter}**. Number in isolation by day, by role, for the reporting week.")
@@ -1231,7 +1260,7 @@ indicatordf <-  left_join(testdf,casedf,by="campus_fac")  %>%
     theme_bw()+
     scale_fill_brewer("",type = "qual") +
     scale_y_continuous(name = "", breaks=breaks_pretty()) +
-    scale_x_date(name="", breaks="2 weeks") +
+    scale_x_date(name="", breaks="2 weeks", limits = xaxis_entire) +
     theme(legend.position = "bottom", legend.title = element_blank())
       
   cap <- glue("**Figure B{fig_counter}**. Number in isolation by day, by role, for the entire reporting period.")
@@ -1240,7 +1269,10 @@ indicatordf <-  left_join(testdf,casedf,by="campus_fac")  %>%
 ```
 
 
+-----------------------------------------
+
 ## SECTION C: DURHAM CAMPUS
+
 ```{r start-Durham}
   fig_counter <- 1
   tab_counter <- 1
@@ -1271,6 +1303,9 @@ indicatordf <-  left_join(testdf,casedf,by="campus_fac")  %>%
 
 ```
 
+-----------------------------------------
+
+### Confirmed Cases and Testing Results
 
 ```{r Figure-C1-EpiCurve, fig.cap=cap}
 
@@ -1280,7 +1315,7 @@ indicatordf <-  left_join(testdf,casedf,by="campus_fac")  %>%
     theme_bw()+
     scale_fill_brewer("Campus",type = "qual") +
     scale_y_continuous(name = "Cases", breaks=breaks_pretty()) +
-    scale_x_date(name="", breaks="2 weeks") +
+    scale_x_date(name="", breaks="2 weeks", limits = xaxis_entire) +
     theme(legend.position = "bottom", legend.title = element_blank())
       
   cap <- glue("**Figure C{fig_counter}**. Newly reported positive cases, by testing date, in UNH Durham.")
@@ -1297,7 +1332,7 @@ indicatordf <-  left_join(testdf,casedf,by="campus_fac")  %>%
     theme_bw()+
     scale_fill_brewer("Campus",type = "qual") +
     scale_y_continuous(name = "Cases", breaks=breaks_pretty()) +
-    scale_x_date(name="", breaks="1 day") +
+    scale_x_date(name="", breaks="1 day", limits = xaxis_reporting) +
     theme(legend.position = "bottom", legend.title = element_blank())
       
   cap <- glue("**Figure C{fig_counter}**. Newly reported positive cases, by testing date, in UNH Durham for reporting week.")
@@ -1424,7 +1459,7 @@ indicatordf <-  left_join(testdf,casedf,by="campus_fac")  %>%
     # % change
     # sparkline % change all time
   
-  cap <- glue("**Figure C{tab_counter}. Average number of daily 'Active Cases' among students at UNH Durham in the reporting period and in the week prior.")
+  cap <- glue("Table C{tab_counter}. Average number of daily 'Active Cases' among students at UNH Durham in the reporting period and in the week prior.")
   tab_counter <- tab_counter+1
   
   tab_c2 <- ts_active_offcamp %>%
@@ -1563,7 +1598,7 @@ indicatordf <-  left_join(testdf,casedf,by="campus_fac")  %>%
 
 ```{r Table-C5-Lab}
 
-  cap <- glue("**Figure C{tab_counter}. Laboratory operations (as number of tests returned with results and percent of all tests submitted) at UNH Durham in the reporting period and in the week prior.")
+  cap <- glue("Table C{tab_counter}. Laboratory operations (as number of tests returned with results and percent of all tests submitted) at UNH Durham in the reporting period and in the week prior.")
   tab_counter <- tab_counter+1
   
   # total number tests submitted by lab, last week + current week, sparkline weekly average over time
@@ -1597,6 +1632,9 @@ indicatordf <-  left_join(testdf,casedf,by="campus_fac")  %>%
   
 ```
 
+-----------------------------------------
+
+### Quarantine and Isolation
 
 ```{r Figure-C5-Quar, fig.cap=cap}
 
@@ -1606,7 +1644,7 @@ indicatordf <-  left_join(testdf,casedf,by="campus_fac")  %>%
     theme_bw()+
     scale_fill_brewer("",type = "qual") +
     scale_y_continuous(name = "", breaks=breaks_pretty()) +
-    scale_x_date(name="", breaks="2 weeks") +
+    scale_x_date(name="", breaks="2 weeks", limits = xaxis_entire) +
     theme(legend.position = "bottom", legend.title = element_blank())
       
   cap <- glue("**Figure C{fig_counter}**. Number in quarantine by day, by location, for the entire reporting period.")
@@ -1623,7 +1661,7 @@ indicatordf <-  left_join(testdf,casedf,by="campus_fac")  %>%
     theme_bw()+
     scale_fill_brewer("",type = "qual") +
     scale_y_continuous(name = "", breaks=breaks_pretty()) +
-    scale_x_date(name="", breaks="1 day") +
+    scale_x_date(name="", breaks="1 day", limits = xaxis_reporting) +
     theme(legend.position = "bottom", legend.title = element_blank())
       
   cap <- glue("**Figure C{fig_counter}**. Number in quarantine by day, by location, for the reporting week.")
@@ -1640,7 +1678,7 @@ indicatordf <-  left_join(testdf,casedf,by="campus_fac")  %>%
     theme_bw()+
     scale_fill_brewer("",type = "qual") +
     scale_y_continuous(name = "", breaks=breaks_pretty()) +
-    scale_x_date(name="", breaks="2 weeks") +
+    scale_x_date(name="", breaks="2 weeks", limits = xaxis_entire) +
     theme(legend.position = "bottom", legend.title = element_blank()) +
     geom_hline(aes(yintercept=180), lty=2, col="red")
       
@@ -1658,7 +1696,7 @@ indicatordf <-  left_join(testdf,casedf,by="campus_fac")  %>%
     theme_bw()+
     scale_fill_brewer("",type = "qual") +
     scale_y_continuous(name = "", breaks=breaks_pretty()) +
-    scale_x_date(name="", breaks="1 day") +
+    scale_x_date(name="", breaks="1 day", limits = xaxis_reporting) +
     theme(legend.position = "bottom", legend.title = element_blank()) +
     geom_hline(aes(yintercept=180), lty=2, col="red")
       
@@ -1675,7 +1713,7 @@ indicatordf <-  left_join(testdf,casedf,by="campus_fac")  %>%
     theme_bw()+
     scale_fill_brewer("",type = "qual") +
     scale_y_continuous(name = "", breaks=breaks_pretty()) +
-    scale_x_date(name="", breaks="2 weeks") +
+    scale_x_date(name="", breaks="2 weeks", limits = xaxis_entire) +
     theme(legend.position = "bottom", legend.title = element_blank())
       
   cap <- glue("**Figure C{fig_counter}**. Number in isolation by day, by location, for the entire reporting period.")
@@ -1692,7 +1730,7 @@ indicatordf <-  left_join(testdf,casedf,by="campus_fac")  %>%
     theme_bw()+
     scale_fill_brewer("",type = "qual") +
     scale_y_continuous(name = "", breaks=breaks_pretty()) +
-    scale_x_date(name="", breaks="1 day") +
+    scale_x_date(name="", breaks="1 day", limits = xaxis_reporting) +
     theme(legend.position = "bottom", legend.title = element_blank())
       
   cap <- glue("**Figure C{fig_counter}**. Number in isolation by day, by location, for the reporting week.")
@@ -1709,7 +1747,7 @@ indicatordf <-  left_join(testdf,casedf,by="campus_fac")  %>%
     theme_bw()+
     scale_fill_brewer("",type = "qual") +
     scale_y_continuous(name = "", breaks=breaks_pretty()) +
-    scale_x_date(name="", breaks="2 weeks") +
+    scale_x_date(name="", breaks="2 weeks", limits = xaxis_entire) +
     theme(legend.position = "bottom", legend.title = element_blank()) +
     geom_hline(aes(yintercept=59), lty=2, col="red")
       
@@ -1727,7 +1765,7 @@ indicatordf <-  left_join(testdf,casedf,by="campus_fac")  %>%
     theme_bw()+
     scale_fill_brewer("",type = "qual") +
     scale_y_continuous(name = "", breaks=breaks_pretty()) +
-    scale_x_date(name="", breaks="1 day") +
+    scale_x_date(name="", breaks="1 day", limits = xaxis_reporting) +
     theme(legend.position = "bottom", legend.title = element_blank()) +
     geom_hline(aes(yintercept=59), lty=2, col="red")
       
@@ -1736,6 +1774,9 @@ indicatordf <-  left_join(testdf,casedf,by="campus_fac")  %>%
   
 ```
 
+-----------------------------------------
+
+### Cumulative Confirmed Cases
 
 ```{r Table-C6-DetailedTable}
 
@@ -1819,7 +1860,8 @@ indicatordf <-  left_join(testdf,casedf,by="campus_fac")  %>%
             group_by(var) %>%
             mutate(ind=1:n()) %>%
             ungroup() %>%
-            mutate(var = ifelse(ind==1, var, ""))
+            mutate(var = ifelse(ind==1, var, "")) %>%
+            select(-ind)
             
   tab_c6 %>%
     flextable() %>%
@@ -1836,6 +1878,8 @@ indicatordf <-  left_join(testdf,casedf,by="campus_fac")  %>%
   
 ```
 
+
+-----------------------------------------
 
 ## SECTION D: CONCORD CAMPUS (LAW)
 
@@ -1865,6 +1909,9 @@ indicatordf <-  left_join(testdf,casedf,by="campus_fac")  %>%
 
 ```
 
+-----------------------------------------
+
+### Confirmed Cases and Testing Results
 
 ```{r Figure-D1-EpiCurve, fig.cap=cap}
 
@@ -1874,7 +1921,7 @@ indicatordf <-  left_join(testdf,casedf,by="campus_fac")  %>%
     theme_bw()+
     scale_fill_brewer("Campus",type = "qual") +
     scale_y_continuous(name = "Cases", breaks=breaks_pretty()) +
-    scale_x_date(name="", breaks="2 weeks") +
+    scale_x_date(name="", breaks="2 weeks", limits = xaxis_entire) +
     theme(legend.position = "bottom", legend.title = element_blank())
       
   cap <- glue("**Figure D{fig_counter}**. Newly reported positive cases, by testing date, in UNH Concord.")
@@ -1890,7 +1937,7 @@ indicatordf <-  left_join(testdf,casedf,by="campus_fac")  %>%
     theme_bw()+
     scale_fill_brewer("Campus",type = "qual") +
     scale_y_continuous(name = "Cases", breaks=breaks_pretty()) +
-    scale_x_date(name="", breaks="1 day") +
+    scale_x_date(name="", breaks="1 day", limits = xaxis_reporting) +
     theme(legend.position = "bottom", legend.title = element_blank())
       
   cap <- glue("**Figure D{fig_counter}**. Newly reported positive cases, by testing date, in UNH Concord for the reporting week.")
@@ -1946,7 +1993,7 @@ indicatordf <-  left_join(testdf,casedf,by="campus_fac")  %>%
     # % change
     # sparkline % change all time
   
-  cap <- glue("**Figure D{tab_counter}. Average number of daily 'Active Cases' among students at UNH Concord in the reporting period and in the week prior.")
+  cap <- glue("Table D{tab_counter}. Average number of daily 'Active Cases' among students at UNH Concord in the reporting period and in the week prior.")
   tab_counter <- tab_counter+1
   
   tab_d2 <- ts_active_offcamp %>%
@@ -2087,7 +2134,7 @@ indicatordf <-  left_join(testdf,casedf,by="campus_fac")  %>%
 
   # total number tests submitted by lab, last week + current week, sparkline weekly average over time
   
-  cap <- glue("**Figure D{tab_counter}. Laboratory operations (as number of tests returned with results and percent of all tests submitted) at UNH Concord in the reporting period and in the week prior.")
+  cap <- glue("Table D{tab_counter}. Laboratory operations (as number of tests returned with results and percent of all tests submitted) at UNH Concord in the reporting period and in the week prior.")
   tab_counter <- tab_counter+1
   
   tab_d5 <- ts_test_lab %>%
@@ -2120,6 +2167,9 @@ indicatordf <-  left_join(testdf,casedf,by="campus_fac")  %>%
   
 ```
 
+-----------------------------------------
+
+### Quarantine and Isolation
 
 ```{r Figure-D5-Quar, fig.cap=cap, eval=params$concord}
 
@@ -2129,7 +2179,7 @@ indicatordf <-  left_join(testdf,casedf,by="campus_fac")  %>%
     theme_bw()+
     scale_fill_brewer("",type = "qual") +
     scale_y_continuous(name = "", breaks=breaks_pretty()) +
-    scale_x_date(name="", breaks="2 weeks") +
+    scale_x_date(name="", breaks="2 weeks", limits = xaxis_entire) +
     theme(legend.position = "bottom", legend.title = element_blank())
       
   cap <- glue("Figure D{fig_counter}. Number in quarantine by day, by location, for the entire reporting period.")
@@ -2146,7 +2196,7 @@ indicatordf <-  left_join(testdf,casedf,by="campus_fac")  %>%
     theme_bw()+
     scale_fill_brewer("",type = "qual") +
     scale_y_continuous(name = "", breaks=breaks_pretty()) +
-    scale_x_date(name="", breaks="1 day") +
+    scale_x_date(name="", breaks="1 day", limits = xaxis_reporting) +
     theme(legend.position = "bottom", legend.title = element_blank())
       
   cap <- glue("Figure D{fig_counter}. Number in quarantine by day, by location, for the reporting week.")
@@ -2163,7 +2213,7 @@ indicatordf <-  left_join(testdf,casedf,by="campus_fac")  %>%
     theme_bw()+
     scale_fill_brewer("",type = "qual") +
     scale_y_continuous(name = "", breaks=breaks_pretty()) +
-    scale_x_date(name="", breaks="1 week") +
+    scale_x_date(name="", breaks="2 weeks", limits = xaxis_entire) +
     theme(legend.position = "bottom", legend.title = element_blank())
       
   cap <- glue("Figure D{fig_counter}. Number in isolation by day, by location, for the entire reporting period")
@@ -2180,7 +2230,7 @@ indicatordf <-  left_join(testdf,casedf,by="campus_fac")  %>%
     theme_bw()+
     scale_fill_brewer("",type = "qual") +
     scale_y_continuous(name = "", breaks=breaks_pretty()) +
-    scale_x_date(name="", breaks="1 day") +
+    scale_x_date(name="", breaks="1 day", limits = xaxis_reporting) +
     theme(legend.position = "bottom", legend.title = element_blank())
       
   cap <- glue("Figure D{fig_counter}. Number in isolation by day, by location, for the reporting week.")
@@ -2188,6 +2238,9 @@ indicatordf <-  left_join(testdf,casedf,by="campus_fac")  %>%
   
 ```
 
+-----------------------------------------
+
+### Cumulative Confirmed Cases
 
 ```{r Table-D6-DetailedTable, eval=params$concord}
 
@@ -2206,93 +2259,91 @@ indicatordf <-  left_join(testdf,casedf,by="campus_fac")  %>%
   
   cases_law <- cases %>%
                filter(campus_fac == "UNH Law") %>%
-               mutate(level = "Total") %>%glimpse()
-  
-  
-  cases_law_currprev<- cases %>%
-                 filter(campus_fac == "UNH Law") %>%
-                 filter(testdate > report_date_minus14 & testdate <= report_date) %>%
-                 mutate(level = ifelse(testdate > report_date_minus7, "Current", "Previous"))
-  #avoids error if there are no current or previous cases
-  if(nrow(cases_law_currprev)>0){ cases_law <- bind_rows(cases_law,cases_law_currprev)}
+               mutate(level = "Total") 
+  if(nrow(cases_law)==0){ 
+    print("No cases in UNH Concord for reporting period")}else{
  
-  cases_law <- cases_law %>% mutate(level = factor(level, levels=c("Total", "Current", "Previous")))
-
-  cases_tot <- cases_law %>%
-               group_by(level, .drop = FALSE) %>%
-               summarise(n = n()) %>%
-               pivot_wider(names_from = level, values_from = n) %>%
-               mutate(var = "Total",
-                      level = "")
+    cases_law <- cases_law %>% mutate(level = factor(level, levels=c("Total", "Current", "Previous")))
+  
+    cases_tot <- cases_law %>%
+                 group_by(level, .drop = FALSE) %>%
+                 summarise(n = n()) %>%
+                 pivot_wider(names_from = level, values_from = n) %>%
+                 mutate(var = "Total",
+                        level = "")
+                
+    cases_role <- cases_law %>%
+                  group_by(level, user_status_fac, .drop = FALSE) %>%
+                  summarise(n = n()) %>%
+                  pivot_wider(names_from = level, values_from = n) %>%
+                  mutate(var = "Role") %>%
+                  rename(level = user_status_fac)
+    
+    cases_age <- cases_law %>%
+                 group_by(level, age_cat, .drop = FALSE) %>%
+                 summarise(n = n()) %>%
+                 pivot_wider(names_from = level, values_from = n) %>%
+                 mutate(var = "Age") %>%
+                 rename(level = age_cat)
+    
+    cases_gen <- cases_law %>%
+                 group_by(level, gender, .drop = FALSE) %>%
+                 summarise(n = n()) %>%
+                 pivot_wider(names_from = level, values_from = n) %>%
+                 mutate(var = "Gender") %>%
+                 rename(level = gender)
+    
+    cases_dorm <- cases_law %>%
+                  group_by(level, dorm_group, .drop = FALSE) %>%
+                  summarise(n = n()) %>%
+                  pivot_wider(names_from = level, values_from = n) %>%
+                  mutate(var = "Dorm") %>%
+                  rename(level = dorm_group)
+     
+    cases_coll <- cases_law %>%
+                  group_by(level, college_fac, .drop = FALSE) %>%
+                  summarise(n = n()) %>%
+                  pivot_wider(names_from = level, values_from = n) %>%
+                  mutate(var = "College") %>%
+                  rename(level = college_fac)
+    
+    tab_d6 <- bind_rows(cases_tot,
+                        cases_role,
+                        cases_age,
+                        cases_gen,
+                        cases_dorm,
+                        cases_coll) %>%
+              select(var, level, Total, Previous, Current) %>%
+              replace_na(list(Total = 0,
+                              Previous = 0,
+                              Current = 0)) %>%
+              mutate(pct_change = ifelse(Previous>0,
+                                         glue("{round((Current - Previous)/Previous*100, 1)}%"),
+                                         "-")) %>%
+              group_by(var) %>%
+              mutate(ind=1:n()) %>%
+              ungroup() %>%
+              mutate(var = ifelse(ind==1, var, "")) %>%
+              select(-ind)
               
-  cases_role <- cases_law %>%
-                group_by(level, user_status_fac, .drop = FALSE) %>%
-                summarise(n = n()) %>%
-                pivot_wider(names_from = level, values_from = n) %>%
-                mutate(var = "Role") %>%
-                rename(level = user_status_fac)
-  
-  cases_age <- cases_law %>%
-               group_by(level, age_cat, .drop = FALSE) %>%
-               summarise(n = n()) %>%
-               pivot_wider(names_from = level, values_from = n) %>%
-               mutate(var = "Age") %>%
-               rename(level = age_cat)
-  
-  cases_gen <- cases_law %>%
-               group_by(level, gender, .drop = FALSE) %>%
-               summarise(n = n()) %>%
-               pivot_wider(names_from = level, values_from = n) %>%
-               mutate(var = "Gender") %>%
-               rename(level = gender)
-  
-  cases_dorm <- cases_law %>%
-                group_by(level, dorm_group, .drop = FALSE) %>%
-                summarise(n = n()) %>%
-                pivot_wider(names_from = level, values_from = n) %>%
-                mutate(var = "Dorm") %>%
-                rename(level = dorm_group)
-   
-  cases_coll <- cases_law %>%
-                group_by(level, college_fac, .drop = FALSE) %>%
-                summarise(n = n()) %>%
-                pivot_wider(names_from = level, values_from = n) %>%
-                mutate(var = "College") %>%
-                rename(level = college_fac)
-  
-  tab_d6 <- bind_rows(cases_tot,
-                      cases_role,
-                      cases_age,
-                      cases_gen,
-                      cases_dorm,
-                      cases_coll) %>%
-            select(var, level, Total, Previous, Current) %>%
-            replace_na(list(Total = 0,
-                            Previous = 0,
-                            Current = 0)) %>%
-            mutate(pct_change = ifelse(Previous>0,
-                                       glue("{round((Current - Previous)/Previous*100, 1)}%"),
-                                       "-")) %>%
-            group_by(var) %>%
-            mutate(ind=1:n()) %>%
-            ungroup() %>%
-            mutate(var = ifelse(ind==1, var, ""))
-            
-  tab_d6 %>%
-    flextable() %>%
-    set_header_labels(var = "", 
-                      level="",
-                      Total = "Cumulative\n(all time)",
-                      Current = glue("Reporting period \nending {report_date_str_short}"),
-                      Previous = glue("Reporting period \nending {report_date_minus7_str_short}"),
-                      pct_change = "% Change") %>%
-    bold(i=1, part="header") %>%
-    bold(j=1) %>%
-    autofit() %>%
-    set_caption(caption=cap)
+    tab_d6 %>%
+      flextable() %>%
+      set_header_labels(var = "", 
+                        level="",
+                        Total = "Cumulative\n(all time)",
+                        Current = glue("Reporting period \nending {report_date_str_short}"),
+                        Previous = glue("Reporting period \nending {report_date_minus7_str_short}"),
+                        pct_change = "% Change") %>%
+      bold(i=1, part="header") %>%
+      bold(j=1) %>%
+      autofit() %>%
+      set_caption(caption=cap)
+    }
   
 ```
 
+
+-----------------------------------------
 
 ## SECTION E: MANCHESTER CAMPUS
 
@@ -2300,6 +2351,7 @@ indicatordf <-  left_join(testdf,casedf,by="campus_fac")  %>%
   fig_counter <- 1
   tab_counter <- 1
 ```
+
 
 ```{r Table-E1-ManchCond}
 
@@ -2322,6 +2374,9 @@ indicatordf <-  left_join(testdf,casedf,by="campus_fac")  %>%
 
 ```
 
+-----------------------------------------
+
+### Confirmed Cases and Testing Results
 
 ```{r Figure-E1-EpiCurve, fig.cap=cap}
 
@@ -2331,7 +2386,7 @@ indicatordf <-  left_join(testdf,casedf,by="campus_fac")  %>%
     theme_bw()+
     scale_fill_brewer("Campus",type = "qual") +
     scale_y_continuous(name = "Cases", breaks=breaks_pretty()) +
-    scale_x_date(name="", breaks="2 weeks") +
+    scale_x_date(name="", breaks="2 weeks", limits = xaxis_entire) +
     theme(legend.position = "bottom", legend.title = element_blank())
       
   cap <- glue("Figure E{fig_counter}. Newly reported positive cases, by testing date, in UNH Manchester.")
@@ -2348,7 +2403,7 @@ indicatordf <-  left_join(testdf,casedf,by="campus_fac")  %>%
     theme_bw()+
     scale_fill_brewer("Campus",type = "qual") +
     scale_y_continuous(name = "Cases", breaks=breaks_pretty()) +
-    scale_x_date(name="", breaks="1 day") +
+    scale_x_date(name="", breaks="1 day", limits = xaxis_reporting) +
     theme(legend.position = "bottom", legend.title = element_blank())
       
   cap <- glue("Figure E{fig_counter}. Newly reported positive cases, by testing date, in UNH Manchester for the reporting week.")
@@ -2405,7 +2460,7 @@ indicatordf <-  left_join(testdf,casedf,by="campus_fac")  %>%
     # % change
     # sparkline % change all time
   
-  cap <- glue("**Figure C{tab_counter}. Average number of daily 'Active Cases' among students at UNH Manchester in the reporting period and in the week prior.")
+  cap <- glue("Table E{tab_counter}. Average number of daily 'Active Cases' among students at UNH Manchester in the reporting period and in the week prior.")
   tab_counter <- tab_counter+1
   
   tab_e2 <- ts_active_offcamp %>%
@@ -2547,7 +2602,7 @@ indicatordf <-  left_join(testdf,casedf,by="campus_fac")  %>%
 
   # total number tests submitted by lab, last week + current week, sparkline weekly average over time
     
-  cap <- glue("**Figure E{tab_counter}. Laboratory operations (as number of tests returned with results and percent of all tests submitted) at UNH Manchester in the reporting period and in the week prior.")
+  cap <- glue("Table E{tab_counter}. Laboratory operations (as number of tests returned with results and percent of all tests submitted) at UNH Manchester in the reporting period and in the week prior.")
   tab_counter <- tab_counter+1
   
   tab_d5 <- ts_test_lab %>%
@@ -2580,6 +2635,9 @@ indicatordf <-  left_join(testdf,casedf,by="campus_fac")  %>%
   
 ```
 
+-----------------------------------------
+
+### Quarantine and Isolation
 
 ```{r Figure-E5-Quar, fig.cap=cap, eval=params$manchester}
 
@@ -2589,7 +2647,7 @@ indicatordf <-  left_join(testdf,casedf,by="campus_fac")  %>%
     theme_bw()+
     scale_fill_brewer("",type = "qual") +
     scale_y_continuous(name = "", breaks=breaks_pretty()) +
-    scale_x_date(name="", breaks="1 week") +
+    scale_x_date(name="", breaks="2 weeks", limits = xaxis_entire) +
     theme(legend.position = "bottom", legend.title = element_blank())
       
   cap <- glue("Figure E{fig_counter}. Number in quarantine by day, by location, for the entire reporting period.")
@@ -2606,7 +2664,7 @@ indicatordf <-  left_join(testdf,casedf,by="campus_fac")  %>%
     theme_bw()+
     scale_fill_brewer("",type = "qual") +
     scale_y_continuous(name = "", breaks=breaks_pretty()) +
-    scale_x_date(name="", breaks="1 day") +
+    scale_x_date(name="", breaks="1 day", limits = xaxis_reporting) +
     theme(legend.position = "bottom", legend.title = element_blank())
       
   cap <- glue("Figure E{fig_counter}. Number in quarantine by day, by location, for the reporting week.")
@@ -2623,7 +2681,7 @@ indicatordf <-  left_join(testdf,casedf,by="campus_fac")  %>%
     theme_bw()+
     scale_fill_brewer("",type = "qual") +
     scale_y_continuous(name = "", breaks=breaks_pretty()) +
-    scale_x_date(name="", breaks="2 weeks") +
+    scale_x_date(name="", breaks="2 weeks", limits = xaxis_entire) +
     theme(legend.position = "bottom", legend.title = element_blank())
       
   cap <- glue("Figure E{fig_counter}. Number in isolation by day, by location, for the entire reporting period.")
@@ -2639,13 +2697,17 @@ indicatordf <-  left_join(testdf,casedf,by="campus_fac")  %>%
     theme_bw()+
     scale_fill_brewer("",type = "qual") +
     scale_y_continuous(name = "", breaks=breaks_pretty()) +
-    scale_x_date(name="", breaks="1 day") +
+    scale_x_date(name="", breaks="1 day", limits = xaxis_reporting) +
     theme(legend.position = "bottom", legend.title = element_blank())
       
   cap <- glue("Figure E{fig_counter}. Number in isolation by day, by location, for the reporting week.")
   fig_counter <- fig_counter + 1
 ```
 
+
+-----------------------------------------
+
+### Cumulative Confirmed Cases
 
 ```{r Table-E6-DetailedTable, eval=params$manchester}
 
@@ -2729,7 +2791,8 @@ indicatordf <-  left_join(testdf,casedf,by="campus_fac")  %>%
             group_by(var) %>%
             mutate(ind=1:n()) %>%
             ungroup() %>%
-            mutate(var = ifelse(ind==1, var, ""))
+            mutate(var = ifelse(ind==1, var, "")) %>%
+            select(-ind)
             
   tab_e6 %>%
     flextable() %>%
