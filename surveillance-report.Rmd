@@ -1621,8 +1621,8 @@ indicatordf <-  left_join(testdf,casedf,by="campus_fac")  %>%
     select(laboratory_fac, val_Previous, val_Current, pct_change) %>%
     flextable() %>%
     set_header_labels(laboratory_fac = "",
-                      Current = glue("Reporting period \nending {report_date_str_short}"),
-                      Previous = glue("Reporting period \nending {report_date_minus7_str_short}"),
+                      val_Current = glue("Reporting period \nending {report_date_str_short}"),
+                      val_Previous = glue("Reporting period \nending {report_date_minus7_str_short}"),
                       pct_change = "% Change") %>%
     autofit() %>%
     bold(i=1, part="header") %>%
@@ -2156,8 +2156,8 @@ indicatordf <-  left_join(testdf,casedf,by="campus_fac")  %>%
     select(laboratory_fac, val_Previous, val_Current, pct_change) %>%
     flextable() %>%
     set_header_labels(laboratory_fac = "",
-                      Current = glue("Reporting period \nending {report_date_str_short}"),
-                      Previous = glue("Reporting period \nending {report_date_minus7_str_short}"),
+                      val_Current = glue("Reporting period \nending {report_date_str_short}"),
+                      val_Previous = glue("Reporting period \nending {report_date_minus7_str_short}"),
                       pct_change = "% Change") %>%
     autofit() %>%
     bold(i=1, part="header") %>%
@@ -2624,8 +2624,8 @@ indicatordf <-  left_join(testdf,casedf,by="campus_fac")  %>%
     select(laboratory_fac, val_Previous, val_Current, pct_change) %>%
     flextable() %>%
     set_header_labels(laboratory_fac = "",
-                      Current = glue("Reporting period \nending {report_date_str_short}"),
-                      Previous = glue("Reporting period \nending {report_date_minus7_str_short}"),
+                      val_Current = glue("Reporting period \nending {report_date_str_short}"),
+                      val_Previous = glue("Reporting period \nending {report_date_minus7_str_short}"),
                       pct_change = "% Change") %>%
     autofit() %>%
     bold(i=1, part="header") %>%
