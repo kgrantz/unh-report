@@ -1082,7 +1082,7 @@ indicatordf <-  left_join(testdf,casedf,by="campus_fac")  %>%
   ## all campuses combined, by role + total:
     # most recent result positive, neg, incon, invalid
   
-  cap <- glue("**Table B{tab_counter}**. Most recent lab result for each individual submitting a sample in the reporting period at all UNH campuses.")
+  cap <- glue("Table B{tab_counter}. Most recent lab result for each individual submitting a sample in the reporting period at all UNH campuses.")
   tab_counter <- tab_counter + 1 
   
   recent_rep <- demo_testing_recent %>%
@@ -1230,7 +1230,7 @@ indicatordf <-  left_join(testdf,casedf,by="campus_fac")  %>%
     # average number in quarantine this week
     # average quarantine beds in use
 
-    cap <- glue("**Table C{tab_counter}**. Durham Campus Operating Conditions.")
+    cap <- glue("Table C{tab_counter}. Durham Campus Operating Conditions.")
     tab_counter <- tab_counter + 1 
   
     indicatordf %>% 
@@ -1398,7 +1398,7 @@ indicatordf <-  left_join(testdf,casedf,by="campus_fac")  %>%
     # % change
     # sparkline % change all time
   
-  cap <- glue("**Figure C{tab_counter}**. Average number of daily 'Active Cases' among students at UNH Durham in the reporting period and in the week prior.")
+  cap <- glue("**Figure C{tab_counter}. Average number of daily 'Active Cases' among students at UNH Durham in the reporting period and in the week prior.")
   tab_counter <- tab_counter+1
   
   tab_c2 <- ts_active_offcamp %>%
@@ -1434,7 +1434,7 @@ indicatordf <-  left_join(testdf,casedf,by="campus_fac")  %>%
 
 ```{r Table-C3-MostRecentLab}
 
-  cap <- glue("**Table C{tab_counter}**. Most recent lab result for each individual submitting a sample in the reporting period at UNH Durham.")
+  cap <- glue("Table C{tab_counter}. Most recent lab result for each individual submitting a sample in the reporting period at UNH Durham.")
   tab_counter <- tab_counter + 1 
   
   ## by role + total, last seven days: most recent result positive, neg, incon, invalid
@@ -1479,7 +1479,7 @@ indicatordf <-  left_join(testdf,casedf,by="campus_fac")  %>%
     # unique IDs submitting (as prop of all IDs not previously positive)
     # tests per unique ID
   
-  cap <- glue("**Table C{tab_counter}**. Tests submitted including repeats at UNH Durham.")
+  cap <- glue("Table C{tab_counter}. Tests submitted including repeats at UNH Durham.")
   tab_counter <- tab_counter + 1 
   
   ntest_rep <- ts_test_res %>%
@@ -1537,7 +1537,7 @@ indicatordf <-  left_join(testdf,casedf,by="campus_fac")  %>%
 
 ```{r Table-C5-Lab}
 
-  cap <- glue("**Figure C{tab_counter}**. Laboratory operations (as number of tests returned with results and percent of all tests submitted) at UNH Durham in the reporting period and in the week prior.")
+  cap <- glue("**Figure C{tab_counter}. Laboratory operations (as number of tests returned with results and percent of all tests submitted) at UNH Durham in the reporting period and in the week prior.")
   tab_counter <- tab_counter+1
   
   # total number tests submitted by lab, last week + current week, sparkline weekly average over time
@@ -1723,7 +1723,7 @@ indicatordf <-  left_join(testdf,casedf,by="campus_fac")  %>%
     # by dorm area
     # by college
   
-  cap <- glue("**Table C{tab_counter}**. Cumulative and current cases at UNH Durham.")
+  cap <- glue("Table C{tab_counter}. Cumulative and current cases at UNH Durham.")
   tab_counter <- tab_counter + 1 
   
   cases_dur <- cases %>%
@@ -1824,7 +1824,7 @@ indicatordf <-  left_join(testdf,casedf,by="campus_fac")  %>%
     # total active cases from last 10 days
     # active cases per 1000 tested
 
-  cap <- glue("**Table D{tab_counter}**. Concord Campus Operating Conditions.")
+  cap <- glue("Table D{tab_counter}. Concord Campus Operating Conditions.")
   tab_counter <- tab_counter + 1 
   
   indicatordf %>% 
@@ -1920,7 +1920,7 @@ indicatordf <-  left_join(testdf,casedf,by="campus_fac")  %>%
     # % change
     # sparkline % change all time
   
-  cap <- glue("**Figure D{tab_counter}**. Average number of daily 'Active Cases' among students at UNH Concord in the reporting period and in the week prior.")
+  cap <- glue("**Figure D{tab_counter}. Average number of daily 'Active Cases' among students at UNH Concord in the reporting period and in the week prior.")
   tab_counter <- tab_counter+1
   
   tab_d2 <- ts_active_offcamp %>%
@@ -1957,7 +1957,7 @@ indicatordf <-  left_join(testdf,casedf,by="campus_fac")  %>%
 ```{r Table-D3-MostRecentLab, eval=params$concord}
 
   ## by role + total, last seven days: most recent result positive, neg, incon, invalid
-  cap <- glue("**Table D{tab_counter}**. Most recent lab result for each individual submitting a sample in the reporting period at UNH Concord.")
+  cap <- glue("Table D{tab_counter}. Most recent lab result for each individual submitting a sample in the reporting period at UNH Concord.")
   tab_counter <- tab_counter + 1 
   
   recent_rep_law <- demo_testing_recent %>%
@@ -2001,7 +2001,7 @@ indicatordf <-  left_join(testdf,casedf,by="campus_fac")  %>%
     # unique IDs submitting (as prop of all IDs not previously positive)
     # tests per unique ID
   
-  cap <- glue("**Table D{tab_counter}**. Tests submitted including repeats at UNH Concord.")
+  cap <- glue("Table D{tab_counter}. Tests submitted including repeats at UNH Concord.")
   tab_counter <- tab_counter + 1 
   
   ntest_rep <- ts_test_res %>%
@@ -2061,7 +2061,7 @@ indicatordf <-  left_join(testdf,casedf,by="campus_fac")  %>%
 
   # total number tests submitted by lab, last week + current week, sparkline weekly average over time
   
-  cap <- glue("**Figure D{tab_counter}**. Laboratory operations (as number of tests returned with results and percent of all tests submitted) at UNH Concord in the reporting period and in the week prior.")
+  cap <- glue("**Figure D{tab_counter}. Laboratory operations (as number of tests returned with results and percent of all tests submitted) at UNH Concord in the reporting period and in the week prior.")
   tab_counter <- tab_counter+1
   
   tab_d5 <- ts_test_lab %>%
@@ -2175,7 +2175,7 @@ indicatordf <-  left_join(testdf,casedf,by="campus_fac")  %>%
     # by dorm area
     # by college
   
-  cap <- glue("**Table D{tab_counter}**. Cumulative and current cases at UNH Concord")
+  cap <- glue("Table D{tab_counter}. Cumulative and current cases at UNH Concord")
   tab_counter <- tab_counter + 1 
   
   cases_law <- cases %>%
@@ -2281,7 +2281,7 @@ indicatordf <-  left_join(testdf,casedf,by="campus_fac")  %>%
     # total active cases from last 10 days
     # active cases per 1000 tested
 
-  cap <- glue("**Table E{tab_counter}**. Manchester Campus Operating Conditions.")
+  cap <- glue("Table E{tab_counter}. Manchester Campus Operating Conditions.")
   tab_counter <- tab_counter + 1 
   
   indicatordf %>% 
@@ -2379,7 +2379,7 @@ indicatordf <-  left_join(testdf,casedf,by="campus_fac")  %>%
     # % change
     # sparkline % change all time
   
-  cap <- glue("**Figure C{tab_counter}**. Average number of daily 'Active Cases' among students at UNH Manchester in the reporting period and in the week prior.")
+  cap <- glue("**Figure C{tab_counter}. Average number of daily 'Active Cases' among students at UNH Manchester in the reporting period and in the week prior.")
   tab_counter <- tab_counter+1
   
   tab_e2 <- ts_active_offcamp %>%
@@ -2417,7 +2417,7 @@ indicatordf <-  left_join(testdf,casedf,by="campus_fac")  %>%
 
   ## by role + total, last seven days: most recent result positive, neg, incon, invalid
     
-  cap <- glue("**Table E{tab_counter}**. Most recent lab result for each individual submitting a sample in the reporting period at UNH Manchester")
+  cap <- glue("Table E{tab_counter}. Most recent lab result for each individual submitting a sample in the reporting period at UNH Manchester")
   tab_counter <- tab_counter + 1 
   
   recent_rep_man <- demo_testing_recent %>%
@@ -2461,7 +2461,7 @@ indicatordf <-  left_join(testdf,casedf,by="campus_fac")  %>%
     # unique IDs submitting (as prop of all IDs not previously positive)
     # tests per unique ID
   
-  cap <- glue("**Table E{tab_counter}**. Tests submitted including repeats at UNH Manchester.")
+  cap <- glue("Table E{tab_counter}. Tests submitted including repeats at UNH Manchester.")
   tab_counter <- tab_counter + 1 
   
   ntest_rep <- ts_test_res %>%
@@ -2521,7 +2521,7 @@ indicatordf <-  left_join(testdf,casedf,by="campus_fac")  %>%
 
   # total number tests submitted by lab, last week + current week, sparkline weekly average over time
     
-  cap <- glue("**Figure E{tab_counter}**. Laboratory operations (as number of tests returned with results and percent of all tests submitted) at UNH Manchester in the reporting period and in the week prior.")
+  cap <- glue("**Figure E{tab_counter}. Laboratory operations (as number of tests returned with results and percent of all tests submitted) at UNH Manchester in the reporting period and in the week prior.")
   tab_counter <- tab_counter+1
   
   tab_d5 <- ts_test_lab %>%
@@ -2633,7 +2633,7 @@ indicatordf <-  left_join(testdf,casedf,by="campus_fac")  %>%
     # by dorm area
     # by college
 
-  cap <- glue("**Table E{tab_counter}**. Cumulative and current cases at UNH Manchester.")
+  cap <- glue("Table E{tab_counter}. Cumulative and current cases at UNH Manchester.")
   tab_counter <- tab_counter + 1  
   
   cases_man <- cases %>%
