@@ -1835,14 +1835,16 @@ indicatordf <-  left_join(testdf,casedf,by="campus_fac")  %>%
                 summarise(n = n()) %>%
                 pivot_wider(names_from = level, values_from = n) %>%
                 mutate(var = "Dorm") %>%
-                rename(level = dorm_group)
+                rename(level = dorm_group) %>%
+                filter(!is.na(level))
    
   cases_coll <- cases_dur %>%
                 group_by(level, college_fac, .drop = FALSE) %>%
                 summarise(n = n()) %>%
                 pivot_wider(names_from = level, values_from = n) %>%
                 mutate(var = "College") %>%
-                rename(level = college_fac)
+                rename(level = college_fac) %>%
+                filter(!is.na(level))
   
   tab_c6 <- bind_rows(cases_tot,
                       cases_role,
@@ -2301,14 +2303,16 @@ indicatordf <-  left_join(testdf,casedf,by="campus_fac")  %>%
                   summarise(n = n()) %>%
                   pivot_wider(names_from = level, values_from = n) %>%
                   mutate(var = "Dorm") %>%
-                  rename(level = dorm_group)
+                  rename(level = dorm_group)  %>%
+                  filter(!is.na(level))
      
     cases_coll <- cases_law %>%
                   group_by(level, college_fac, .drop = FALSE) %>%
                   summarise(n = n()) %>%
                   pivot_wider(names_from = level, values_from = n) %>%
                   mutate(var = "College") %>%
-                  rename(level = college_fac)
+                  rename(level = college_fac) %>%
+                  filter(!is.na(level))
     
     tab_d6 <- bind_rows(cases_tot,
                         cases_role,
@@ -2772,14 +2776,16 @@ indicatordf <-  left_join(testdf,casedf,by="campus_fac")  %>%
                 summarise(n = n()) %>%
                 pivot_wider(names_from = level, values_from = n) %>%
                 mutate(var = "Dorm") %>%
-                rename(level = dorm_group)
+                rename(level = dorm_group) %>%
+                filter(!is.na(level))
    
   cases_coll <- cases_man %>%
                 group_by(level, college_fac, .drop = FALSE) %>%
                 summarise(n = n()) %>%
                 pivot_wider(names_from = level, values_from = n) %>%
                 mutate(var = "College") %>%
-                rename(level = college_fac)
+                rename(level = college_fac) %>%
+                filter(!is.na(level))
   
   tab_e6 <- bind_rows(cases_tot,
                       cases_role,
