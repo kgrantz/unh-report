@@ -494,9 +494,12 @@ params:
   
   
   ## create long quarantine dataset (1 row per ID, per day in quarantine)
-  ## TO DO: this imputes any missing exit dates with the report_date
+  ## TO DO: this imputes any missing exit dates with the entry date + 14
   demo_quar_long <- demo_quar %>%
-                    replace_na(list(quar_exitdate = report_date)) %>%
+                    mutate(quar_exitdate = ifelse(is.na(quar_exitdate) & !is.na(quar_entrydate),
+                                                        quar_entrydate + 14,
+                                                        quar_exitdate)) %>%
+                    mutate(quar_exitdate = as.Date(quar_exitdate, origin="1970-01-01")) %>%
                     rowwise() %>% 
                     do(data.frame(date = .$quar_entrydate:.$quar_exitdate,
                                   uid = .$uid,
@@ -676,8 +679,8 @@ params:
   ## data frame: number first positive by campus, testdate
   ts_cases_campus <- cases %>%
                      group_by(testdate, campus_fac) %>%
-                     summarize(n = n())
-  
+                     summarize(n = n()) 
+
   # data frame: active cases by day, by campus, by off/on campus for students only
   rollsum <- rollify(sum, window=7)
   ts_active_offcamp <- cases %>%
@@ -712,32 +715,46 @@ params:
   
   ## data frame: number pos, neg, pos+neg by week
   ts_test_res_wk_all <- ts_test_res %>%
-                          mutate(week = epiweek(testdate)) %>%
-                          group_by(week) %>%
-                          summarise(pos = sum(pos),
-                                    neg = sum(neg),
-                                    pos_neg = pos + neg,
-                                    pct_pos = pos / pos_neg)
+                        filter(testdate <= report_date) %>%
+                        mutate(weeks_prior = as.numeric(report_date - testdate)%/%7) %>%
+                        group_by(weeks_prior) %>%
+                        summarise(pos = sum(pos),
+                                  neg = sum(neg),
+                                  pos_neg = pos + neg,
+                                  pct_pos = pos / pos_neg) %>%
+                        mutate(start_date = report_date - 7*weeks_prior,
+                               end_date = report_date - 7*weeks_prior + 6,
+                               label = glue("{format(start_date, '%b %d')} - {format(end_date, '%b %d')}"))
 
   ## data frame: number pos, neg, pos+neg by week, campus
   ts_test_res_wk_camp <-  ts_test_res %>%
-                          mutate(week = epiweek(testdate)) %>%
-                          group_by(week, campus_fac) %>%
+                          filter(testdate <= report_date) %>%
+                          mutate(weeks_prior = as.numeric(report_date - testdate)%/%7) %>%
+                          group_by(weeks_prior, campus_fac) %>%
                           summarise(pos = sum(pos),
                                     neg = sum(neg),
                                     test = sum(test),
                                     pos_neg = pos + neg,
-                                    pct_pos = pos / pos_neg)
+                                    pct_pos = pos / pos_neg) %>%
+                          ungroup() %>%
+                          mutate(start_date = report_date - 7*weeks_prior,
+                                 end_date = report_date - 7*weeks_prior + 6,
+                                 label = glue("{format(start_date, '%b %d')} - {format(end_date, '%b %d')}"))
   
   ## data frame: number pos, neg, pos+neg by week, campus, user_status
   ts_test_res_wk_role <- ts_test_res %>%
-                         mutate(week = epiweek(testdate)) %>%
-                         group_by(week, campus_fac, user_status_fac) %>%
+                         filter(testdate <= report_date) %>%
+                         mutate(weeks_prior = as.numeric(report_date - testdate)%/%7) %>%
+                         group_by(weeks_prior, campus_fac, user_status_fac) %>%
                          summarise(pos = sum(pos),
                                    neg = sum(neg),
                                    test = sum(test),
                                    pos_neg = pos + neg,
-                                   pct_pos = pos / pos_neg)
+                                   pct_pos = pos / pos_neg) %>%
+                         ungroup() %>%
+                         mutate(start_date = report_date - 7*weeks_prior,
+                                end_date = report_date - 7*weeks_prior + 6,
+                                label = glue("{format(start_date, '%b %d')} - {format(end_date, '%b %d')}"))
   
   ## long versions of quarantine and isolation
   ## data frame: number in quarantine by campus, role, testdate
@@ -973,11 +990,11 @@ indicatordf <-  left_join(testdf,casedf,by="campus_fac")  %>%
 
   ## epi curve, new positive, all time, by day, colored by campus
   ggplot(ts_cases_campus, aes(x=testdate, y=n, fill=campus_fac)) +
-    geom_col()+
+    geom_col(width=0.9)+
     theme_bw()+
     scale_fill_brewer("Campus",type = "qual") +
     scale_y_continuous(name = "Cases", breaks=breaks_pretty()) +
-    xlab("") +
+    scale_x_date(name="", date_breaks = "2 weeks") +
     theme(legend.position = "bottom", legend.title = element_blank())
       
   cap <- glue("**Figure B{fig_counter}**. Newly reported positive cases, by testing date, in each campus.")
@@ -989,11 +1006,11 @@ indicatordf <-  left_join(testdf,casedf,by="campus_fac")  %>%
 ```{r Figure-B2-EpiCurve-7day, fig.cap = cap}
 
   ggplot(ts_cases_campus %>% filter(testdate <= report_date, testdate > report_date_minus7), aes(x=testdate, y=n, fill=campus_fac)) +
-    geom_col()+
+    geom_col(width=0.9)+
     theme_bw()+
     scale_fill_brewer("Campus",type = "qual") +
     scale_y_continuous(name = "Cases", breaks=breaks_pretty()) +
-    xlab("") +
+    scale_x_date(name="", breaks = seq(report_date_minus7, report_date, 1)) +
     theme(legend.position = "bottom", legend.title = element_blank())
       
   cap <- glue("**Figure B{fig_counter}**. Newly reported positive cases, by testing date, in each campus for the reporting period. Any campus not displayed had no reported positive cases in this period.")
@@ -1010,7 +1027,7 @@ indicatordf <-  left_join(testdf,casedf,by="campus_fac")  %>%
     # unique IDs submitting (as prop of all IDs not previously positive)
     # tests per unique ID
   
-  cap <- glue("**Table B{tab_counter}**. Tests submitted including repeats at all UNH campuses.")
+  cap <- glue("Table B{tab_counter}. Tests submitted including repeats at all UNH campuses.")
   tab_counter <- tab_counter + 1 
   
   ntest_rep <- ts_test_res %>%
@@ -1108,12 +1125,16 @@ indicatordf <-  left_join(testdf,casedf,by="campus_fac")  %>%
 
   rng <- ceiling(max(ts_test_res_wk_all$pct_pos, na.rm = TRUE)*1000)/1000
   brks <- seq(0, rng, 0.0005)
+  xbrks <- ts_test_res_wk_all$start_date
+  xlab <- ts_test_res_wk_all$label
   
-  ggplot(ts_test_res_wk_all, aes(x=week, y=pct_pos)) +
+  ggplot(ts_test_res_wk_all, aes(x=start_date, y=pct_pos)) +
     geom_line(color = "#120075", size=1.25) +
     scale_y_continuous(name="Percent Positive", breaks=brks, labels=glue("{brks*100}%")) +
-    xlab("") +
-    theme_bw() 
+    scale_x_date(name="", breaks=xbrks, labels=xlab) +
+    theme_bw() +
+    theme(axis.text.x = element_text(angle=45, vjust = 1, hjust=1))
+
     
   cap <- glue("**Figure B{fig_counter}**. Proportion of positive tests over all negative and positive tests.")
   fig_counter <- fig_counter + 1
@@ -1131,7 +1152,7 @@ indicatordf <-  left_join(testdf,casedf,by="campus_fac")  %>%
     theme_bw()+
     scale_fill_brewer("",type = "qual") +
     scale_y_continuous(name = "", breaks=breaks_pretty()) +
-    xlab("") +
+    scale_x_date(name="", date_breaks = "1 day") +
     theme(legend.position = "bottom", legend.title = element_blank())
       
   cap <- glue("**Figure B{fig_counter}**. Number in quarantine by day, by role, for the reporting week.")
@@ -1148,7 +1169,7 @@ indicatordf <-  left_join(testdf,casedf,by="campus_fac")  %>%
     theme_bw()+
     scale_fill_brewer("",type = "qual") +
     scale_y_continuous(name = "", breaks=breaks_pretty()) +
-    xlab("") +
+    scale_x_date(name="", breaks="2 weeks") +
     theme(legend.position = "bottom", legend.title = element_blank())
       
   cap <- glue("**Figure B{fig_counter}**. Number in quarantine by day, by role, for the entire reporting period.")
@@ -1167,7 +1188,7 @@ indicatordf <-  left_join(testdf,casedf,by="campus_fac")  %>%
     theme_bw()+
     scale_fill_brewer("",type = "qual") +
     scale_y_continuous(name = "", breaks=breaks_pretty()) +
-    xlab("") +
+    scale_x_date(name="", breaks="1 day") +
     theme(legend.position = "bottom", legend.title = element_blank())
       
   cap <- glue("**Figure B{fig_counter}**. Number in isolation by day, by role, for the reporting week.")
@@ -1184,7 +1205,7 @@ indicatordf <-  left_join(testdf,casedf,by="campus_fac")  %>%
     theme_bw()+
     scale_fill_brewer("",type = "qual") +
     scale_y_continuous(name = "", breaks=breaks_pretty()) +
-    xlab("") +
+    scale_x_date(name="", breaks="2 weeks") +
     theme(legend.position = "bottom", legend.title = element_blank())
       
   cap <- glue("**Figure B{fig_counter}**. Number in isolation by day, by role, for the entire reporting period.")
@@ -1229,11 +1250,11 @@ indicatordf <-  left_join(testdf,casedf,by="campus_fac")  %>%
 
   ## epi curve, new positive, all time, by day, colored by role
   ggplot(ts_cases_role %>% filter(campus_fac == "UNH Durham"), aes(x=testdate, y=n, fill=user_status_fac)) +
-    geom_col()+
+    geom_col(width=0.9)+
     theme_bw()+
     scale_fill_brewer("Campus",type = "qual") +
     scale_y_continuous(name = "Cases", breaks=breaks_pretty()) +
-    xlab("") +
+    scale_x_date(name="", breaks="2 weeks") +
     theme(legend.position = "bottom", legend.title = element_blank())
       
   cap <- glue("**Figure C{fig_counter}**. Newly reported positive cases, by testing date, in UNH Durham.")
@@ -1246,11 +1267,11 @@ indicatordf <-  left_join(testdf,casedf,by="campus_fac")  %>%
 
   ## epi curve, new positive, last 7 days, by day, colored by role
   ggplot(ts_cases_role %>% filter(campus_fac == "UNH Durham" & testdate <= report_date & testdate > report_date_minus7), aes(x=testdate, y=n, fill=user_status_fac)) +
-    geom_col()+
+    geom_col(width=0.9)+
     theme_bw()+
     scale_fill_brewer("Campus",type = "qual") +
     scale_y_continuous(name = "Cases", breaks=breaks_pretty()) +
-    xlab("") +
+    scale_x_date(name="", breaks="1 day") +
     theme(legend.position = "bottom", legend.title = element_blank())
       
   cap <- glue("**Figure C{fig_counter}**. Newly reported positive cases, by testing date, in UNH Durham for reporting week.")
@@ -1261,11 +1282,17 @@ indicatordf <-  left_join(testdf,casedf,by="campus_fac")  %>%
 
 ```{r Figure-C3-TestSubmitted, fig.cap=cap}
   
+  xbrks <- ts_test_res_wk_all$start_date[seq(1, max(ts_test_res_wk_all$weeks_prior), 2)]
+  xlab <- ts_test_res_wk_all$label[seq(1, max(ts_test_res_wk_all$weeks_prior), 2)]
+  
   ## by week, total tests submitted (including repeats), colored by role
-  ggplot(ts_test_res_wk_role %>% filter(campus_fac=="UNH Durham"), aes(x=week, y=test)) +
+  ggplot(ts_test_res_wk_role %>% filter(campus_fac=="UNH Durham"), aes(x=start_date, y=test)) +
     geom_line(color = "#120075", size=1.25) +
+    scale_x_date(name="", breaks=xbrks, labels=xlab) +
     facet_wrap(.~user_status_fac, scales="free_y") +
-    theme_bw()
+    theme_bw() +
+    theme(axis.text.x = element_text(angle=45, vjust = 1, hjust=1))
+
   
   cap <- glue("**Figure C{fig_counter}**. Total tests submitted per week in UNH Durham. Note the different y-axis scales.")
   fig_counter <- fig_counter + 1
@@ -1278,12 +1305,16 @@ indicatordf <-  left_join(testdf,casedf,by="campus_fac")  %>%
   ## by week, # pos / (# pos + # neg)
   rng <- ceiling(max(ts_test_res_wk_camp$pct_pos[ts_test_res_wk_camp$campus_fac=="UNH Durham"], na.rm = TRUE)*1000)/1000
   brks <- seq(0, rng, 0.0005)
+  xbrks <- ts_test_res_wk_all$start_date
+  xlab <- ts_test_res_wk_all$label
   
-  ggplot(ts_test_res_wk_camp %>% filter(campus_fac == "UNH Durham"), aes(x=week, y=pct_pos)) +
+  ggplot(ts_test_res_wk_camp %>% filter(campus_fac == "UNH Durham"), aes(x=start_date, y=pct_pos)) +
     geom_line(color = "#120075", size=1.25) +
     scale_y_continuous(name="Percent Positive", breaks=brks, labels=glue("{brks*100}%")) +
-    xlab("") +
-    theme_bw() 
+    scale_x_date(name="", breaks=xbrks, labels=xlab) +
+    theme_bw() +
+    theme(axis.text.x = element_text(angle=45, vjust = 1, hjust=1))
+
     
   cap <- glue("**Figure C{fig_counter}**. Proportion of positive tests over all negative and positive tests in UNH Durham.")
   fig_counter <- fig_counter + 1
@@ -1545,11 +1576,11 @@ indicatordf <-  left_join(testdf,casedf,by="campus_fac")  %>%
 
   ## number in quarantine, colored by quar location, by day, all time
   ggplot(ts_quar_offcamp %>% filter(campus_fac == "UNH Durham"), aes(x=date, y=n, fill=location)) +
-    geom_col()+
+    geom_col(width=0.9)+
     theme_bw()+
     scale_fill_brewer("",type = "qual") +
     scale_y_continuous(name = "", breaks=breaks_pretty()) +
-    xlab("") +
+    scale_x_date(name="", breaks="2 weeks") +
     theme(legend.position = "bottom", legend.title = element_blank())
       
   cap <- glue("**Figure C{fig_counter}**. Number in quarantine by day, by location, for the entire reporting period.")
@@ -1562,11 +1593,11 @@ indicatordf <-  left_join(testdf,casedf,by="campus_fac")  %>%
 
   ## number in quarantine, colored by quar location, by day, last 7 days
   ggplot(ts_quar_offcamp %>% filter(campus_fac == "UNH Durham" & date > report_date_minus7 & date<=report_date), aes(x=date, y=n, fill=location)) +
-    geom_col()+
+    geom_col(width=0.9)+
     theme_bw()+
     scale_fill_brewer("",type = "qual") +
     scale_y_continuous(name = "", breaks=breaks_pretty()) +
-    xlab("") +
+    scale_x_date(name="", breaks="1 day") +
     theme(legend.position = "bottom", legend.title = element_blank())
       
   cap <- glue("**Figure C{fig_counter}**. Number in quarantine by day, by location, for the reporting week.")
@@ -1579,11 +1610,11 @@ indicatordf <-  left_join(testdf,casedf,by="campus_fac")  %>%
 
   ## number quarantine beds in use by day
   ggplot(ts_quar_campus %>% filter(campus_fac == "UNH Durham"), aes(x=date, y=nbed)) +
-    geom_col(fill="#120075")+
+    geom_col(width=0.9, fill="#120075")+
     theme_bw()+
     scale_fill_brewer("",type = "qual") +
     scale_y_continuous(name = "", breaks=breaks_pretty()) +
-    xlab("") +
+    scale_x_date(name="", breaks="2 weeks") +
     theme(legend.position = "bottom", legend.title = element_blank()) +
     geom_hline(aes(yintercept=180), lty=2, col="red")
       
@@ -1597,11 +1628,11 @@ indicatordf <-  left_join(testdf,casedf,by="campus_fac")  %>%
 
   ## number quarantine beds in use by day, past 7 days
   ggplot(ts_quar_campus %>% filter(campus_fac == "UNH Durham" & date > report_date_minus7 & date <= report_date), aes(x=date, y=nbed)) +
-    geom_col(fill="#120075")+
+    geom_col(width=0.9, fill="#120075")+
     theme_bw()+
     scale_fill_brewer("",type = "qual") +
     scale_y_continuous(name = "", breaks=breaks_pretty()) +
-    xlab("") +
+    scale_x_date(name="", breaks="1 day") +
     theme(legend.position = "bottom", legend.title = element_blank()) +
     geom_hline(aes(yintercept=180), lty=2, col="red")
       
@@ -1614,11 +1645,11 @@ indicatordf <-  left_join(testdf,casedf,by="campus_fac")  %>%
   
   ## number in isolation, colored by isolation location, by day, all time
  ggplot(ts_isol_offcamp %>% filter(campus_fac == "UNH Durham"), aes(x=date, y=n, fill=location)) +
-    geom_col()+
+    geom_col(width=0.9)+
     theme_bw()+
     scale_fill_brewer("",type = "qual") +
     scale_y_continuous(name = "", breaks=breaks_pretty()) +
-    xlab("") +
+    scale_x_date(name="", breaks="2 weeks") +
     theme(legend.position = "bottom", legend.title = element_blank())
       
   cap <- glue("**Figure C{fig_counter}**. Number in isolation by day, by location, for the entire reporting period.")
@@ -1631,11 +1662,11 @@ indicatordf <-  left_join(testdf,casedf,by="campus_fac")  %>%
 
   ## number in isolation, colored by isolation location, by day, last 7 days
  ggplot(ts_isol_offcamp %>% filter(campus_fac == "UNH Durham" & date > report_date_minus7 & date <= report_date), aes(x=date, y=n, fill=location)) +
-    geom_col()+
+    geom_col(width=0.9)+
     theme_bw()+
     scale_fill_brewer("",type = "qual") +
     scale_y_continuous(name = "", breaks=breaks_pretty()) +
-    xlab("") +
+    scale_x_date(name="", breaks="1 day") +
     theme(legend.position = "bottom", legend.title = element_blank())
       
   cap <- glue("**Figure C{fig_counter}**. Number in isolation by day, by location, for the reporting week.")
@@ -1648,11 +1679,11 @@ indicatordf <-  left_join(testdf,casedf,by="campus_fac")  %>%
 
   ## number isolation beds in use by day
  ggplot(ts_isol_campus %>% filter(campus_fac == "UNH Durham"), aes(x=date, y=nbed)) +
-    geom_col(fill="#120075")+
+    geom_col(width=0.9, fill="#120075")+
     theme_bw()+
     scale_fill_brewer("",type = "qual") +
     scale_y_continuous(name = "", breaks=breaks_pretty()) +
-    xlab("") +
+    scale_x_date(name="", breaks="2 weeks") +
     theme(legend.position = "bottom", legend.title = element_blank()) +
     geom_hline(aes(yintercept=59), lty=2, col="red")
       
@@ -1666,11 +1697,11 @@ indicatordf <-  left_join(testdf,casedf,by="campus_fac")  %>%
 
   ## number isolation beds in use by day, past 7 days
  ggplot(ts_isol_campus %>% filter(campus_fac == "UNH Durham" & date > report_date_minus7 & date <= report_date), aes(x=date, y=nbed)) +
-    geom_col(fill="#120075")+
+    geom_col(width=0.9, fill="#120075")+
     theme_bw()+
     scale_fill_brewer("",type = "qual") +
     scale_y_continuous(name = "", breaks=breaks_pretty()) +
-    xlab("") +
+    scale_x_date(name="", breaks="1 day") +
     theme(legend.position = "bottom", legend.title = element_blank()) +
     geom_hline(aes(yintercept=59), lty=2, col="red")
       
@@ -1813,11 +1844,11 @@ indicatordf <-  left_join(testdf,casedf,by="campus_fac")  %>%
 
   ## epi curve, new positive, all time, by day, colored by role
   ggplot(ts_cases_role %>% filter(campus_fac == "UNH Law"), aes(x=testdate, y=n, fill=user_status_fac)) +
-    geom_col()+
+    geom_col(width=0.9)+
     theme_bw()+
     scale_fill_brewer("Campus",type = "qual") +
     scale_y_continuous(name = "Cases", breaks=breaks_pretty()) +
-    xlab("") +
+    scale_x_date(name="", breaks="2 weeks") +
     theme(legend.position = "bottom", legend.title = element_blank())
       
   cap <- glue("**Figure D{fig_counter}**. Newly reported positive cases, by testing date, in UNH Concord.")
@@ -1829,11 +1860,11 @@ indicatordf <-  left_join(testdf,casedf,by="campus_fac")  %>%
 
   ## epi curve, new positive, last 7 days, by day, colored by role
   ggplot(ts_cases_role %>% filter(campus_fac == "UNH Law" & testdate <= report_date & testdate > report_date_minus7), aes(x=testdate, y=n, fill=user_status_fac)) +
-    geom_col()+
+    geom_col(width=0.9)+
     theme_bw()+
     scale_fill_brewer("Campus",type = "qual") +
     scale_y_continuous(name = "Cases", breaks=breaks_pretty()) +
-    xlab("") +
+    scale_x_date(name="", breaks="1 day") +
     theme(legend.position = "bottom", legend.title = element_blank())
       
   cap <- glue("**Figure D{fig_counter}**. Newly reported positive cases, by testing date, in UNH Concord for the reporting week.")
@@ -1844,10 +1875,16 @@ indicatordf <-  left_join(testdf,casedf,by="campus_fac")  %>%
 ```{r Figure-D3-TestSubmitted, fig.cap=cap, eval=params$concord}
   
   ## by week, total tests submitted (including repeats), colored by role
-  ggplot(ts_test_res_wk_role %>% filter(campus_fac=="UNH Law"), aes(x=week, y=test)) +
+  xbrks <- ts_test_res_wk_all$start_date[seq(1, max(ts_test_res_wk_all$weeks_prior), 2)]
+  xlab <- ts_test_res_wk_all$label[seq(1, max(ts_test_res_wk_all$weeks_prior), 2)]
+  
+  ggplot(ts_test_res_wk_role %>% filter(campus_fac=="UNH Law"), aes(x=start_date, y=test)) +
     geom_line(color = "#120075", size=1.25) +
+    scale_x_date(name="", breaks=xbrks, labels=xlab) +
     facet_wrap(.~user_status_fac, scales="free_y") +
-    theme_bw()
+    theme_bw() +
+    theme(axis.text.x = element_text(angle=45, vjust = 1, hjust=1))
+
   
   cap <- glue("**Figure D{fig_counter}**. Total tests submitted per week in UNH Concord Note the different y-axis scales.")
   fig_counter <- fig_counter + 1
@@ -1859,12 +1896,15 @@ indicatordf <-  left_join(testdf,casedf,by="campus_fac")  %>%
   ## by week, # pos / (# pos + # neg)
   rng <- ceiling(max(ts_test_res_wk_camp$pct_pos[ts_test_res_wk_camp$campus_fac=="UNH Law"], na.rm = TRUE)*1000)/1000
   brks <- seq(0, rng, 0.0005)
+  xbrks <- ts_test_res_wk_all$start_date
+  xlab <- ts_test_res_wk_all$label
   
-  ggplot(ts_test_res_wk_camp %>% filter(campus_fac == "UNH Law"), aes(x=week, y=pct_pos)) +
+  ggplot(ts_test_res_wk_camp %>% filter(campus_fac == "UNH Law"), aes(x=start_date, y=pct_pos)) +
     geom_line(color = "#120075", size=1.25) +
     scale_y_continuous(name="Percent Positive", breaks=brks, labels=glue("{brks*100}%")) +
-    xlab("") +
-    theme_bw() 
+    scale_x_date(name="", breaks=xbrks, labels=xlab) +
+    theme_bw() +
+    theme(axis.text.x = element_text(angle=45, vjust = 1, hjust=1))
     
   cap <- glue("Figure D{fig_counter}. Proportion of positive tests over all negative and positive tests in UNH Law.")
   fig_counter <- fig_counter + 1
@@ -2059,11 +2099,11 @@ indicatordf <-  left_join(testdf,casedf,by="campus_fac")  %>%
 
   ## number in quarantine, colored by quar location, by day, all time
  ggplot(ts_quar_offcamp %>% filter(campus_fac == "UNH Law"), aes(x=date, y=n, fill=location)) +
-    geom_col()+
+    geom_col(width=0.9)+
     theme_bw()+
     scale_fill_brewer("",type = "qual") +
     scale_y_continuous(name = "", breaks=breaks_pretty()) +
-    xlab("") +
+    scale_x_date(name="", breaks="2 weeks") +
     theme(legend.position = "bottom", legend.title = element_blank())
       
   cap <- glue("Figure D{fig_counter}. Number in quarantine by day, by location, for the entire reporting period.")
@@ -2076,11 +2116,11 @@ indicatordf <-  left_join(testdf,casedf,by="campus_fac")  %>%
 
   ## number in quarantine, colored by quar location, by day, last 7 days
  ggplot(ts_quar_offcamp %>% filter(campus_fac == "UNH Law" & date > report_date_minus7 & date <= report_date), aes(x=date, y=n, fill=location)) +
-    geom_col()+
+    geom_col(width=0.9)+
     theme_bw()+
     scale_fill_brewer("",type = "qual") +
     scale_y_continuous(name = "", breaks=breaks_pretty()) +
-    xlab("") +
+    scale_x_date(name="", breaks="1 day") +
     theme(legend.position = "bottom", legend.title = element_blank())
       
   cap <- glue("Figure D{fig_counter}. Number in quarantine by day, by location, for the reporting week.")
@@ -2093,11 +2133,11 @@ indicatordf <-  left_join(testdf,casedf,by="campus_fac")  %>%
   
   ## number in isolation, colored by isolation location, by day, all time
  ggplot(ts_isol_offcamp %>% filter(campus_fac == "UNH Law"), aes(x=date, y=n, fill=location)) +
-    geom_col()+
+    geom_col(width=0.9)+
     theme_bw()+
     scale_fill_brewer("",type = "qual") +
     scale_y_continuous(name = "", breaks=breaks_pretty()) +
-    xlab("") +
+    scale_x_date(name="", breaks="1 week") +
     theme(legend.position = "bottom", legend.title = element_blank())
       
   cap <- glue("Figure D{fig_counter}. Number in isolation by day, by location, for the entire reporting period")
@@ -2110,11 +2150,11 @@ indicatordf <-  left_join(testdf,casedf,by="campus_fac")  %>%
 
   ## number in isolation, colored by isolation location, by day, last 7 days
  ggplot(ts_isol_offcamp %>% filter(campus_fac == "UNH Law" & date > report_date_minus7 & date <= report_date), aes(x=date, y=n, fill=location)) +
-    geom_col()+
+    geom_col(width=0.9)+
     theme_bw()+
     scale_fill_brewer("",type = "qual") +
     scale_y_continuous(name = "", breaks=breaks_pretty()) +
-    xlab("") +
+    scale_x_date(name="", breaks="1 day") +
     theme(legend.position = "bottom", legend.title = element_blank())
       
   cap <- glue("Figure D{fig_counter}. Number in isolation by day, by location, for the reporting week.")
@@ -2261,11 +2301,11 @@ indicatordf <-  left_join(testdf,casedf,by="campus_fac")  %>%
 
   ## epi curve, new positive, all time, by day, colored by role
   ggplot(ts_cases_role %>% filter(campus_fac == "UNH Manchester"), aes(x=testdate, y=n, fill=user_status_fac)) +
-    geom_col()+
+    geom_col(width=0.9)+
     theme_bw()+
     scale_fill_brewer("Campus",type = "qual") +
     scale_y_continuous(name = "Cases", breaks=breaks_pretty()) +
-    xlab("") +
+    scale_x_date(name="", breaks="2 weeks") +
     theme(legend.position = "bottom", legend.title = element_blank())
       
   cap <- glue("Figure E{fig_counter}. Newly reported positive cases, by testing date, in UNH Manchester.")
@@ -2278,11 +2318,11 @@ indicatordf <-  left_join(testdf,casedf,by="campus_fac")  %>%
 
   ## epi curve, new positive, last 7 days, by day, colored by role
   ggplot(ts_cases_role %>% filter(campus_fac == "UNH Manchester" & testdate <= report_date & testdate > report_date_minus7), aes(x=testdate, y=n, fill=user_status_fac)) +
-    geom_col()+
+    geom_col(width=0.9)+
     theme_bw()+
     scale_fill_brewer("Campus",type = "qual") +
     scale_y_continuous(name = "Cases", breaks=breaks_pretty()) +
-    xlab("") +
+    scale_x_date(name="", breaks="1 day") +
     theme(legend.position = "bottom", legend.title = element_blank())
       
   cap <- glue("Figure E{fig_counter}. Newly reported positive cases, by testing date, in UNH Manchester for the reporting week.")
@@ -2293,12 +2333,17 @@ indicatordf <-  left_join(testdf,casedf,by="campus_fac")  %>%
 
 ```{r Figure-E3-TestSubmitted, fig.cap=cap, eval=params$manchester}
   
-  ## by week, total tests submitted (including repeats), colored by role
-  ggplot(ts_test_res_wk_role %>% filter(campus_fac=="UNH Manchester"), aes(x=week, y=test)) +
-    geom_line(color = "#120075", size=1.25) +
-    facet_wrap(.~user_status_fac, scales="free_y") +
-    theme_bw()
+  xbrks <- ts_test_res_wk_all$start_date[seq(1, max(ts_test_res_wk_all$weeks_prior), 2)]
+  xlab <- ts_test_res_wk_all$label[seq(1, max(ts_test_res_wk_all$weeks_prior), 2)]
   
+  ## by week, total tests submitted (including repeats), colored by role
+  ggplot(ts_test_res_wk_role %>% filter(campus_fac=="UNH Manchester"), aes(x=start_date, y=test)) +
+    geom_line(color = "#120075", size=1.25) +
+    scale_x_date(name="", breaks=xbrks, labels=xlab) +
+    facet_wrap(.~user_status_fac, scales="free_y") +
+    theme_bw() +
+    theme(axis.text.x = element_text(angle=45, vjust = 1, hjust=1))
+
   cap <- glue("Figure E{fig_counter}. Total tests submitted per week in UNH Manchester. Note the different y-axis scales.")
   fig_counter <- fig_counter + 1
   
@@ -2310,12 +2355,15 @@ indicatordf <-  left_join(testdf,casedf,by="campus_fac")  %>%
   ## by week, # pos / (# pos + # neg)
   rng <- ceiling(max(ts_test_res_wk_camp$pct_pos[ts_test_res_wk_camp$campus_fac=="UNH Manchester"], na.rm = TRUE)*1000)/1000
   brks <- seq(0, rng, 0.0005)
+  xbrks <- ts_test_res_wk_all$start_date
+  xlab <- ts_test_res_wk_all$label
   
-  ggplot(ts_test_res_wk_camp %>% filter(campus_fac == "UNH Manchester"), aes(x=week, y=pct_pos)) +
+  ggplot(ts_test_res_wk_camp %>% filter(campus_fac == "UNH Manchester"), aes(x=start_date, y=pct_pos)) +
     geom_line(color = "#120075", size=1.25) +
     scale_y_continuous(name="Percent Positive", breaks=brks, labels=glue("{brks*100}%")) +
-    xlab("") +
-    theme_bw() 
+    scale_x_date(name="", breaks=xbrks, labels=xlab) +
+    theme_bw() +
+    theme(axis.text.x = element_text(angle=45, vjust = 1, hjust=1))
     
   cap <- glue("Figure E{fig_counter}. Proportion of positive tests over all negative and positive tests in UNH Manchester")
   fig_counter <- fig_counter + 1
@@ -2511,11 +2559,11 @@ indicatordf <-  left_join(testdf,casedf,by="campus_fac")  %>%
 
   ## number in quarantine, colored by quar location, by day, all time
  ggplot(ts_quar_offcamp %>% filter(campus_fac == "UNH Manchester"), aes(x=date, y=n, fill=location)) +
-    geom_col()+
+    geom_col(width=0.9)+
     theme_bw()+
     scale_fill_brewer("",type = "qual") +
     scale_y_continuous(name = "", breaks=breaks_pretty()) +
-    xlab("") +
+    scale_x_date(name="", breaks="1 week") +
     theme(legend.position = "bottom", legend.title = element_blank())
       
   cap <- glue("Figure E{fig_counter}. Number in quarantine by day, by location, for the entire reporting period.")
@@ -2528,11 +2576,11 @@ indicatordf <-  left_join(testdf,casedf,by="campus_fac")  %>%
 
   ## number in quarantine, colored by quar location, by day, last 7 days
  ggplot(ts_quar_offcamp %>% filter(campus_fac == "UNH Manchester" & date > report_date_minus7 & date <= report_date), aes(x=date, y=n, fill=location)) +
-    geom_col()+
+    geom_col(width=0.9)+
     theme_bw()+
     scale_fill_brewer("",type = "qual") +
     scale_y_continuous(name = "", breaks=breaks_pretty()) +
-    xlab("") +
+    scale_x_date(name="", breaks="1 day") +
     theme(legend.position = "bottom", legend.title = element_blank())
       
   cap <- glue("Figure E{fig_counter}. Number in quarantine by day, by location, for the reporting week.")
@@ -2545,11 +2593,11 @@ indicatordf <-  left_join(testdf,casedf,by="campus_fac")  %>%
   
   ## number in isolation, colored by isolation location, by day, all time
  ggplot(ts_isol_offcamp %>% filter(campus_fac == "UNH Manchester"), aes(x=date, y=n, fill=location)) +
-    geom_col()+
+    geom_col(width=0.9)+
     theme_bw()+
     scale_fill_brewer("",type = "qual") +
     scale_y_continuous(name = "", breaks=breaks_pretty()) +
-    xlab("") +
+    scale_x_date(name="", breaks="2 weeks") +
     theme(legend.position = "bottom", legend.title = element_blank())
       
   cap <- glue("Figure E{fig_counter}. Number in isolation by day, by location, for the entire reporting period.")
@@ -2561,11 +2609,11 @@ indicatordf <-  left_join(testdf,casedf,by="campus_fac")  %>%
 
   ## number in isolation, colored by isolation location, by day, last 7 days
  ggplot(ts_isol_offcamp %>% filter(campus_fac == "UNH Manchester" & date > report_date_minus7 & date <= report_date), aes(x=date, y=n, fill=location)) +
-    geom_col()+
+    geom_col(width=0.9)+
     theme_bw()+
     scale_fill_brewer("",type = "qual") +
     scale_y_continuous(name = "", breaks=breaks_pretty()) +
-    xlab("") +
+    scale_x_date(name="", breaks="1 day") +
     theme(legend.position = "bottom", legend.title = element_blank())
       
   cap <- glue("Figure E{fig_counter}. Number in isolation by day, by location, for the reporting week.")
