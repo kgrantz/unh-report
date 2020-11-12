@@ -925,8 +925,10 @@ be close to overwhelmed.
     compose(i=3, j=3, value=as_paragraph("More info: ", hyperlink_text(x="www.nh.gov/covid19", url="https://www.nh.gov/covid19"))) %>%
     autofit() %>%
     add_footer_lines(values = glue("{statedatetimeupdated}")) %>%
-    bold(i=1, part="header")
+    bold(i=1, part="header") %>%
+    set_caption(caption = glue("Table B{tab_counter}. COVID-19 conditions in New Hampshire."))
   
+  tab_counter <- tab_counter + 1
 ```
 
 -----------------------------------------
@@ -1173,7 +1175,8 @@ $~$
     bold(j=1) %>%
     add_footer_lines(values="All values presented for the current reporting week, unless otherwise noted.") %>%
     set_caption(caption = cap) %>%
-    autofit() 
+    autofit() %>%
+    colformat_int(j=2:3)
 
   
 ```
@@ -1214,7 +1217,8 @@ $~$
     bold(i=1, part="header") %>%
     bold(j=1) %>%
     set_caption(caption = cap) %>%
-    autofit() 
+    autofit() %>%
+    colformat_int(j=2:5)
 
   
 ```
@@ -1612,7 +1616,8 @@ $~$
     bold(i=1, part="header") %>%
     bold(j=1) %>%
     set_caption(caption = cap) %>%
-    autofit() 
+    autofit() %>%
+    colformat_int(j=2:5)
   
 ```
 
@@ -1676,7 +1681,8 @@ $~$
     bold(i=1, part="header") %>%
     bold(j=1) %>%
     add_footer_lines(values="All values presented for the current reporting week, unless otherwise noted.") %>%
-    set_caption(caption = cap)
+    set_caption(caption = cap) %>%
+    colformat_int(j=2:3)
   
 ```
 
@@ -2194,7 +2200,8 @@ $~$
     bold(i=1, part="header") %>%
     bold(j=1) %>%
     set_caption(caption=cap) %>%
-    autofit()
+    autofit()%>%
+    colformat_int(j=2:5)
   
 ```
 
@@ -2258,7 +2265,8 @@ $~$
     bold(i=1, part="header") %>%
     bold(j=1) %>%
     add_footer_lines(values="All values presented for the current reporting week, unless otherwise noted.") %>%
-    set_caption(caption=cap)
+    set_caption(caption=cap) %>%
+    colformat_int(j=2:3)
   
 ```
 
@@ -2690,7 +2698,8 @@ $~$
     bold(i=1, part="header") %>%
     bold(j=1) %>%
     set_caption(caption=cap) %>%
-    autofit()
+    autofit()%>%
+    colformat_int(j=2:5)
   
 ```
 
@@ -2754,7 +2763,8 @@ $~$
     bold(i=1, part="header") %>%
     bold(j=1) %>%
     add_footer_lines(values="All values presented for the current reporting week, unless otherwise noted.") %>%
-    set_caption(caption=cap)
+    set_caption(caption=cap)%>%
+    colformat_int(j=2:3)
 
 ```
 
