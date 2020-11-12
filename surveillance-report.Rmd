@@ -1100,8 +1100,14 @@ $~$
 
 ```{r Figure-B2-EpiCurve-7day, fig.cap = cap}
 
+  labs <- ts_cases_campus %>% 
+          filter(testdate <= report_date, testdate > report_date_minus7) %>%
+          group_by(testdate) %>%
+          summarise(n=sum(n))
+
   ggplot(ts_cases_campus %>% filter(testdate <= report_date, testdate > report_date_minus7), aes(x=testdate, y=n, fill=campus_fac)) +
     geom_col(width=0.9)+
+    geom_text(data=labs, aes(x=testdate, y=n+2, label=n, fill=NA)) +
     theme_bw()+
     scale_fill_brewer("Campus",type = "qual") +
     scale_y_continuous(name = "Cases", breaks=breaks_pretty()) +
@@ -1246,10 +1252,15 @@ $~$
 ```{r Figure-B4-Quar-7day, fig.cap=cap}
 
   ts_quar_role_sum <- ts_quar_role %>% select(-campus_fac) %>% group_by(date, user_status_fac) %>% summarise_all(sum)
-
+  
+  ts_quar_role_labs <- ts_quar_role_sum %>%
+                       group_by(date) %>%
+                       summarise(n = sum(n))
+  
   ## number in quarantine, by role. by day, last 7 days
-  ggplot(ts_quar_role_sum %>% filter(date <= report_date, date > report_date_minus7), aes(x=date, y=n, fill=user_status_fac)) +
-    geom_col()+
+  ggplot(ts_quar_role_sum %>% filter(date <= report_date, date > report_date_minus7), aes(x=date, y=n)) +
+    geom_col(aes(fill=user_status_fac)) +
+    geom_text(data=ts_quar_role_labs, aes(x=date, y=n+20, label=n)) +
     theme_bw()+
     scale_fill_brewer("",type = "qual") +
     scale_y_continuous(name = "", breaks=breaks_pretty()) +
@@ -1286,8 +1297,13 @@ $~$
   ## number in isolation, by role, by day, last 7 days
   ts_isol_role_sum <- ts_isol_role %>% select(-campus_fac) %>% group_by(date, user_status_fac) %>% summarise_all(sum)
 
-  ggplot(ts_isol_role_sum %>% filter(date <= report_date, date > report_date_minus7), aes(x=date, y=n, fill=user_status_fac)) +
-    geom_col()+
+  ts_isol_role_labs <- ts_isol_role_sum %>%
+                       group_by(date) %>%
+                       summarise(n = sum(n))
+  
+  ggplot(ts_isol_role_sum %>% filter(date <= report_date, date > report_date_minus7), aes(x=date, y=n)) +
+    geom_col(aes(fill=user_status_fac)) +
+    geom_text(data=ts_isol_role_labs, aes(x=date, y=n+5, label=n)) +
     theme_bw()+
     scale_fill_brewer("",type = "qual") +
     scale_y_continuous(name = "", breaks=breaks_pretty()) +
@@ -1381,9 +1397,15 @@ $~$
 
 ```{r Figure-C2-EpiCurve-7day, fig.cap=cap}
 
+  labs <- ts_cases_role %>% 
+          filter(campus_fac == "UNH Durham" & testdate <= report_date & testdate > report_date_minus7) %>%
+          group_by(testdate) %>%
+          summarise(n=sum(n))
+  
   ## epi curve, new positive, last 7 days, by day, colored by role
-  ggplot(ts_cases_role %>% filter(campus_fac == "UNH Durham" & testdate <= report_date & testdate > report_date_minus7), aes(x=testdate, y=n, fill=user_status_fac)) +
-    geom_col(width=0.9)+
+  ggplot(ts_cases_role %>% filter(campus_fac == "UNH Durham" & testdate <= report_date & testdate > report_date_minus7), aes(x=testdate, y=n)) +
+    geom_col(aes(fill=user_status_fac), width=0.9)+
+    geom_text(data=labs, aes(x=testdate, y=n+2, label=n, fill=NA)) +
     theme_bw()+
     scale_fill_brewer("Campus",type = "qual") +
     scale_y_continuous(name = "Cases", breaks=breaks_pretty()) +
@@ -1705,8 +1727,8 @@ $~$
 ```{r Figure-C5-Quar, fig.cap=cap}
 
   ## number in quarantine, colored by quar location, by day, all time
-  ggplot(ts_quar_offcamp %>% filter(campus_fac == "UNH Durham"), aes(x=date, y=n, fill=location)) +
-    geom_col(width=0.9)+
+  ggplot(ts_quar_offcamp %>% filter(campus_fac == "UNH Durham"), aes(x=date, y=n)) +
+    geom_col(aes(fill=location), width=0.9) +
     theme_bw()+
     scale_fill_brewer("",type = "qual") +
     scale_y_continuous(name = "", breaks=breaks_pretty()) +
@@ -1723,9 +1745,15 @@ $~$
 
 ```{r Figure-C6-Quar-7day, fig.cap=cap}
 
+  labs <- ts_quar_offcamp %>% 
+          filter(campus_fac == "UNH Durham"& date > report_date_minus7 & date<=report_date) %>%
+          group_by(date) %>%
+          summarise(n=sum(n))
+
   ## number in quarantine, colored by quar location, by day, last 7 days
-  ggplot(ts_quar_offcamp %>% filter(campus_fac == "UNH Durham" & date > report_date_minus7 & date<=report_date), aes(x=date, y=n, fill=location)) +
-    geom_col(width=0.9)+
+  ggplot(ts_quar_offcamp %>% filter(campus_fac == "UNH Durham" & date > report_date_minus7 & date<=report_date), aes(x=date, y=n)) +
+    geom_col(aes(fill=location), width=0.9)+
+    geom_text(data=labs, aes(x=date, y=n+10, label=n)) +
     theme_bw()+
     scale_fill_brewer("",type = "qual") +
     scale_y_continuous(name = "", breaks=breaks_pretty()) +
@@ -1764,6 +1792,7 @@ $~$
   ## number quarantine beds in use by day, past 7 days
   ggplot(ts_quar_campus %>% filter(campus_fac == "UNH Durham" & date > report_date_minus7 & date <= report_date), aes(x=date, y=nbed)) +
     geom_col(width=0.9, fill="#120075")+
+    geom_text(aes(y=nbed+10, label=nbed)) +
     theme_bw()+
     scale_fill_brewer("",type = "qual") +
     scale_y_continuous(name = "", breaks=breaks_pretty()) +
@@ -1798,9 +1827,15 @@ $~$
 
 ```{r Figure-C10-Isol-7day, fig.cap=cap}
 
+  labs <- ts_isol_offcamp %>% 
+          filter(campus_fac == "UNH Durham"& date > report_date_minus7 & date<=report_date) %>%
+          group_by(date) %>%
+          summarise(n=sum(n))
+
   ## number in isolation, colored by isolation location, by day, last 7 days
- ggplot(ts_isol_offcamp %>% filter(campus_fac == "UNH Durham" & date > report_date_minus7 & date <= report_date), aes(x=date, y=n, fill=location)) +
-    geom_col(width=0.9)+
+ ggplot(ts_isol_offcamp %>% filter(campus_fac == "UNH Durham" & date > report_date_minus7 & date <= report_date), aes(x=date, y=n)) +
+    geom_col(aes(fill=location), width=0.9)+
+    geom_text(data=labs, aes(x=date, y=n+10, label=n)) +
     theme_bw()+
     scale_fill_brewer("",type = "qual") +
     scale_y_continuous(name = "", breaks=breaks_pretty()) +
@@ -1839,6 +1874,7 @@ $~$
   ## number isolation beds in use by day, past 7 days
  ggplot(ts_isol_campus %>% filter(campus_fac == "UNH Durham" & date > report_date_minus7 & date <= report_date), aes(x=date, y=nbed)) +
     geom_col(width=0.9, fill="#120075")+
+    geom_text(aes(y=nbed+5, label=nbed)) +
     theme_bw()+
     scale_fill_brewer("",type = "qual") +
     scale_y_continuous(name = "", breaks=breaks_pretty()) +
@@ -2293,8 +2329,8 @@ $~$
 ```{r Figure-D6-Quar-7day, fig.cap=cap, eval=params$concord}
 
   ## number in quarantine, colored by quar location, by day, last 7 days
- ggplot(ts_quar_offcamp %>% filter(campus_fac == "UNH Law" & date > report_date_minus7 & date <= report_date), aes(x=date, y=n, fill=location)) +
-    geom_col(width=0.9)+
+  ggplot(ts_quar_offcamp %>% filter(campus_fac == "UNH Law" & date > report_date_minus7 & date<=report_date), aes(x=date, y=n)) +
+    geom_col(aes(fill=location), width=0.9)+
     theme_bw()+
     scale_fill_brewer("",type = "qual") +
     scale_y_continuous(name = "", breaks=breaks_pretty()) +
@@ -2789,8 +2825,8 @@ $~$
 ```{r Figure-E6-Quar-7day, fig.cap=cap, eval=params$manchester}
 
   ## number in quarantine, colored by quar location, by day, last 7 days
- ggplot(ts_quar_offcamp %>% filter(campus_fac == "UNH Manchester" & date > report_date_minus7 & date <= report_date), aes(x=date, y=n, fill=location)) +
-    geom_col(width=0.9)+
+  ggplot(ts_quar_offcamp %>% filter(campus_fac == "UNH Manchester" & date > report_date_minus7 & date<=report_date), aes(x=date, y=n)) +
+    geom_col(aes(fill=location), width=0.9)+
     theme_bw()+
     scale_fill_brewer("",type = "qual") +
     scale_y_continuous(name = "", breaks=breaks_pretty()) +
