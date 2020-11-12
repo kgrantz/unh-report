@@ -924,9 +924,8 @@ be close to overwhelmed.
     bg(j=3, bg = cell_cols) %>%
     compose(i=3, j=3, value=as_paragraph("More info: ", hyperlink_text(x="www.nh.gov/covid19", url="https://www.nh.gov/covid19"))) %>%
     autofit() %>%
-    add_footer_lines(values = glue("{statedatetimeupdated}"))
-
-                          
+    add_footer_lines(values = glue("{statedatetimeupdated}")) %>%
+    bold(i=1, part="header")
   
 ```
 
@@ -1066,14 +1065,14 @@ be close to overwhelmed.
   # make flextable
   indicatordf %>% 
     flextable() %>%
-    autofit() %>%
     bold(i=1, part="header") %>%
     set_header_labels(Indicator="") %>%
     set_caption(caption = cap) %>%
     bg(i=~(Indicator == "Active Cases"), j=2:4, bg = active_case_colors) %>%
     bg(i=~(Indicator == "Percent Positive (7d average)"), j=2:4, bg = pct_pos_colors) %>%
     bg(i=~(Indicator == "Average isolation beds in use (n, %)"), j=2:4, bg = isol_bed_colors) %>%
-    bg(i=~(Indicator == "Average quarantine beds in use (n, %)"), j=2:4, bg = quar_bed_colors)
+    bg(i=~(Indicator == "Average quarantine beds in use (n, %)"), j=2:4, bg = quar_bed_colors) %>%
+    autofit() 
 
 ```
 
@@ -1097,6 +1096,7 @@ be close to overwhelmed.
   
 ```
 
+$~$
 
 ```{r Figure-B2-EpiCurve-7day, fig.cap = cap}
 
@@ -1113,6 +1113,7 @@ be close to overwhelmed.
 
 ```
 
+$~$
 
 ```{r Table-B3-TestSubmitted}
   
@@ -1161,16 +1162,17 @@ be close to overwhelmed.
   
   tab_b3 %>% 
     flextable() %>%
-    autofit() %>%
     hline(i=4, part="body", border=fp_border(width=2)) %>%
     bold(i=1, part="header") %>%
     bold(j=1) %>%
     add_footer_lines(values="All values presented for the current reporting week, unless otherwise noted.") %>%
-    set_caption(caption = cap)
+    set_caption(caption = cap) %>%
+    autofit() 
 
   
 ```
 
+$~$
 
 ```{r Table-B4-MostRecentLab}
 
@@ -1202,15 +1204,16 @@ be close to overwhelmed.
 
   tab_b4 %>%
     flextable() %>%
-    autofit() %>%
     hline(i=4, part="body", border=fp_border(width=2)) %>%
     bold(i=1, part="header") %>%
     bold(j=1) %>%
-    set_caption(caption = cap)
+    set_caption(caption = cap) %>%
+    autofit() 
 
   
 ```
 
+$~$
 
 ```{r Figure-B3-PropPositive, fig.cap = cap}
 
@@ -1258,6 +1261,7 @@ be close to overwhelmed.
   
 ```
 
+$~$
 
 ```{r Figure-B5-Quar, fig.cap=cap}
 
@@ -1275,6 +1279,7 @@ be close to overwhelmed.
   
 ```
 
+$~$
 
 ```{r Figure-B6-Isol-7day, fig.cap=cap}
 
@@ -1294,6 +1299,7 @@ be close to overwhelmed.
   
 ```
 
+$~$
 
 ```{r Figure-B7-Isol, fig.cap=cap}
   
@@ -1341,12 +1347,12 @@ be close to overwhelmed.
     bold(i=1, part="header") %>%
     set_header_labels(Indicator="",
                       `UNH Durham`="Reporting Period") %>%
-    autofit() %>%
     set_caption(caption = cap) %>%
     bg(i=~(Indicator == "Active Cases"), j=2, bg = active_case_colors[1]) %>%
     bg(i=~(Indicator == "Percent Positive (7d average)"), j=2, bg = pct_pos_colors[1]) %>%
     bg(i=~(Indicator == "Average isolation beds in use (n, %)"), j=2, bg = isol_bed_colors[1]) %>%
-    bg(i=~(Indicator == "Average quarantine beds in use (n, %)"), j=2, bg = quar_bed_colors[1]) 
+    bg(i=~(Indicator == "Average quarantine beds in use (n, %)"), j=2, bg = quar_bed_colors[1]) %>%
+    autofit()
 
 ```
 
@@ -1370,6 +1376,7 @@ be close to overwhelmed.
   
 ```
 
+$~$
 
 ```{r Figure-C2-EpiCurve-7day, fig.cap=cap}
 
@@ -1387,6 +1394,7 @@ be close to overwhelmed.
   
 ```
 
+$~$
 
 ```{r Figure-C3-TestSubmitted, fig.cap=cap}
   
@@ -1407,6 +1415,7 @@ be close to overwhelmed.
   
 ```
 
+$~$
 
 ```{r Figure-C4A-PropPositive, fig.cap=cap}
 
@@ -1429,6 +1438,7 @@ be close to overwhelmed.
   
 ```
 
+$~$
 
 ```{r Figure-C4-Map-Active-and-Cumulative, fig.cap=cap}
 
@@ -1497,6 +1507,7 @@ be close to overwhelmed.
   
 ```
 
+$~$
 
 ```{r Table-C2-OnOffCampus}
 
@@ -1541,6 +1552,7 @@ be close to overwhelmed.
 
 ```
 
+$~$
 
 ```{r Table-C3-MostRecentLab}
 
@@ -1573,14 +1585,15 @@ be close to overwhelmed.
 
   tab_c3 %>%
     flextable() %>%
-    autofit() %>%
     hline(i=4, part="body", border=fp_border(width=2)) %>%
     bold(i=1, part="header") %>%
     bold(j=1) %>%
-    set_caption(caption = cap)
+    set_caption(caption = cap) %>%
+    autofit() 
   
 ```
 
+$~$
 
 ```{r Table-C4-TestSubmitted}
   
@@ -1644,6 +1657,7 @@ be close to overwhelmed.
   
 ```
 
+$~$
 
 ```{r Table-C5-Lab}
 
@@ -1703,6 +1717,7 @@ be close to overwhelmed.
   
 ```
 
+$~$
 
 ```{r Figure-C6-Quar-7day, fig.cap=cap}
 
@@ -1720,6 +1735,7 @@ be close to overwhelmed.
   
 ```
 
+$~$
 
 ```{r Figure-C7-QuarBeds, fig.cap=cap}
 
@@ -1738,6 +1754,7 @@ be close to overwhelmed.
   
 ```
 
+$~$
 
 ```{r Figure-C8-QuarBeds-7day, fig.cap=cap}
 
@@ -1755,6 +1772,7 @@ be close to overwhelmed.
   fig_counter <- fig_counter + 1
 ```
 
+$~$
 
 ```{r Figure-C9-Isol, fig.cap=cap}
   
@@ -1772,6 +1790,7 @@ be close to overwhelmed.
   
 ```
 
+$~$
 
 ```{r Figure-C10-Isol-7day, fig.cap=cap}
 
@@ -1789,6 +1808,7 @@ be close to overwhelmed.
   
 ```
 
+$~$
 
 ```{r Figure-C11-IsolBeds, fig.cap=cap}
 
@@ -1807,6 +1827,7 @@ be close to overwhelmed.
   
 ```
 
+$~$
 
 ```{r Figure-C12-IsolBeds-7day, fig.cap=cap}
 
@@ -1962,10 +1983,10 @@ be close to overwhelmed.
     bold(i=1, part="header") %>%
     set_header_labels(Indicator="",
                       `UNH Law`="Reporting Period") %>%
-    autofit() %>%
     set_caption(caption = cap)%>%
     bg(i=~(Indicator == "Active Cases"), j=2, bg = active_case_colors[2]) %>%
-    bg(i=~(Indicator == "Percent Positive (7d average)"), j=2, bg = pct_pos_colors[2]) 
+    bg(i=~(Indicator == "Percent Positive (7d average)"), j=2, bg = pct_pos_colors[2]) %>%
+    autofit()
 ```
 
 -----------------------------------------
@@ -1987,6 +2008,7 @@ be close to overwhelmed.
   fig_counter <- fig_counter + 1
 ```
 
+$~$
 
 ```{r Figure-D2-EpiCurve-7day, fig.cap=cap, eval=params$concord}
 
@@ -2003,6 +2025,7 @@ be close to overwhelmed.
   fig_counter <- fig_counter + 1
 ```
 
+$~$
 
 ```{r Figure-D3-TestSubmitted, fig.cap=cap, eval=params$concord}
   
@@ -2022,6 +2045,7 @@ be close to overwhelmed.
   fig_counter <- fig_counter + 1
 ```
 
+$~$
 
 ```{r Figure-D4-PropPositive, eval=params$concord}
 
@@ -2043,6 +2067,7 @@ be close to overwhelmed.
   
 ```
 
+$~$
 
 ```{r Table-D2-OnOffCampus, eval=params$concord}
 
@@ -2087,6 +2112,7 @@ be close to overwhelmed.
   
 ```
 
+$~$
 
 ```{r Table-D3-MostRecentLab, eval=params$concord}
 
@@ -2119,14 +2145,15 @@ be close to overwhelmed.
 
   tab_d3 %>%
     flextable() %>%
-    autofit() %>%
     hline(i=4, part="body", border=fp_border(width=2)) %>%
     bold(i=1, part="header") %>%
     bold(j=1) %>%
-    set_caption(caption=cap)
+    set_caption(caption=cap) %>%
+    autofit()
   
 ```
 
+$~$
 
 ```{r Table-D4-TestSubmitted, eval=params$concord}
   
@@ -2190,6 +2217,7 @@ be close to overwhelmed.
   
 ```
 
+$~$
 
 ```{r Table-D5-Lab, eval=params$concord}
 
@@ -2250,6 +2278,7 @@ be close to overwhelmed.
   
 ```
 
+$~$
 
 ```{r Figure-D6-Quar-7day, fig.cap=cap, eval=params$concord}
 
@@ -2267,6 +2296,7 @@ be close to overwhelmed.
   
 ```
 
+$~$
 
 ```{r Figure-D7-Isol, fig.cap=cap, eval=params$concord}
   
@@ -2284,6 +2314,7 @@ be close to overwhelmed.
   
 ```
 
+$~$
 
 ```{r Figure-D8-Isol-7day, fig.cap=cap, eval=params$concord}
 
@@ -2439,10 +2470,10 @@ be close to overwhelmed.
     bold(i=1, part="header") %>%
     set_header_labels(Indicator="",
                       `UNH Manchester`="Reporting Period") %>%
-    autofit() %>%
     set_caption(caption=cap)%>%
     bg(i=~(Indicator == "Active Cases"), j=2, bg = active_case_colors[3]) %>%
-    bg(i=~(Indicator == "Percent Positive (7d average)"), j=2, bg = pct_pos_colors[3]) 
+    bg(i=~(Indicator == "Percent Positive (7d average)"), j=2, bg = pct_pos_colors[3]) %>%
+    autofit()
 
 ```
 
@@ -2466,6 +2497,7 @@ be close to overwhelmed.
   
 ```
 
+$~$
 
 ```{r Figure-E2-EpiCurve-7day, fig.cap=cap, eval=params$manchester}
 
@@ -2483,6 +2515,7 @@ be close to overwhelmed.
   
 ```
 
+$~$
 
 ```{r Figure-E3-TestSubmitted, fig.cap=cap, eval=params$manchester}
   
@@ -2502,6 +2535,7 @@ be close to overwhelmed.
   
 ```
 
+$~$
 
 ```{r Figure-E4-PropPositive, fig.cap=cap, eval=params$manchester}
 
@@ -2523,6 +2557,7 @@ be close to overwhelmed.
   
 ```
 
+$~$
 
 ```{r Table-E2-OnOffCampus, eval=params$manchester}
 
@@ -2567,6 +2602,7 @@ be close to overwhelmed.
 
 ```
 
+$~$
 
 ```{r Table-E3-MostRecentLab, eval=params$manchester}
 
@@ -2600,14 +2636,15 @@ be close to overwhelmed.
 
   tab_e3 %>%
     flextable() %>%
-    autofit() %>%
     hline(i=4, part="body", border=fp_border(width=2)) %>%
     bold(i=1, part="header") %>%
     bold(j=1) %>%
-    set_caption(caption=cap)
+    set_caption(caption=cap) %>%
+    autofit()
   
 ```
 
+$~$
 
 ```{r Table-E4-TestSubmitted, eval=params$manchester}
   
@@ -2671,6 +2708,7 @@ be close to overwhelmed.
 
 ```
 
+$~$
 
 ```{r Table-E5-Lab, eval=params$manchester}
 
@@ -2731,6 +2769,7 @@ be close to overwhelmed.
   
 ```
 
+$~$
 
 ```{r Figure-E6-Quar-7day, fig.cap=cap, eval=params$manchester}
 
@@ -2748,6 +2787,7 @@ be close to overwhelmed.
   
 ```
 
+$~$
 
 ```{r Figure-E7-Isol, fig.cap=cap, eval=params$manchester}
   
@@ -2764,6 +2804,7 @@ be close to overwhelmed.
   fig_counter <- fig_counter + 1
 ```
 
+$~$
 
 ```{r Figure-E8-Isol-7day, fig.cap=cap, eval=params$manchester}
 
