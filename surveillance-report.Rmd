@@ -2107,7 +2107,7 @@ be close to overwhelmed.
                       summarise_all(sum) %>%
                       mutate(user_status_fac = "Total (reporting week)")
   
-  tab_d3 <- bind_rows(recent_rep_dur, recent_total_dur) %>%
+  tab_d3 <- bind_rows(recent_rep_law, recent_total_law) %>%
             filter(user_status_fac != "Employee") %>%
             mutate(user_status_fac = ifelse(user_status_fac=="Unknown", "Contractors and Visitors", user_status_fac)) %>%
             rename(`Positive` = pos,
@@ -2588,7 +2588,7 @@ be close to overwhelmed.
                       summarise_all(sum) %>%
                       mutate(user_status_fac = "Total (reporting week)")
   
-  tab_e3 <- bind_rows(recent_rep_dur, recent_total_dur) %>%
+  tab_e3 <- bind_rows(recent_rep_man, recent_total_man) %>%
             filter(user_status_fac != "Employee") %>%
             mutate(user_status_fac = ifelse(user_status_fac=="Unknown", "Contractors and Visitors", user_status_fac)) %>%
             rename(`Positive` = pos,
