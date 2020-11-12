@@ -47,7 +47,7 @@ params:
                                        strings=c("Green", "Yellow", "Orange", "Red")){
   return(strings[max(which(value > thresholds))])
   }
-  
+    
 ```
 
 ```{r data-load, warning = params$run_checks}
@@ -610,14 +610,6 @@ params:
                   mutate(dup_pos = ifelse(result_num==1 & !is.na(posdate) & posdate_diff >= 0 & posdate_diff < 10, 1, 0)) %>%
                   ungroup() %>%
                   filter(dup_pos == 0)
-  
-  # #for now: just remove the any duplicate cases, take the first one with the most recent results date
-  # doublecounted <- demo_testing %>% filter(result_fac=="Positive")  %>%
-  #                 arrange(resultsdate)%>%
-  #                 filter(duplicated(uid)==TRUE)
-  # 
-  # #print the number of individuals showing up positive multiple times
-  # nrow(doublecounted)
 
   ## add epiweek
   ## add indicators for whether testdate is within 7 or 10 days of report date
@@ -888,6 +880,11 @@ be close to overwhelmed.
 
 ## SECTION B: UNIVERSITY-WIDE SITUATION
 
+
+-----------------------------------------
+
+### Statewide Conditions
+
 ```{r Table-B1A-StateCond}
 
   ## parse state page for current COVID19 cases, hospitalizations
@@ -908,17 +905,29 @@ be close to overwhelmed.
     html_nodes("h4") %>%
     html_text()
   
+  state_tab <- data.frame(var = c("Current COVID-19 cases",
+                                  "Current COVID-19 hospitalizations",
+                                  "Most strict restrictions"),
+                          val = c(state_curr_cases, state_curr_hosp, state_curr_cond),
+                          level = c(pick_color_threshold_str(state_curr_cases, thresholds=c(0, 100, 1200, 1800)),
+                                    pick_color_threshold_str(state_curr_hosp, thresholds = c(0, 25, 50, 100)),
+                                    "www.nh.gov/covid19"))
+  
+  cell_cols <- c(pick_color_threshold(state_curr_cases, thresholds=c(0, 100, 1200, 1800)),
+                 pick_color_threshold(state_curr_hosp, thresholds = c(0, 25, 50, 100)),
+                 "#FFFFFF")
+  state_tab %>%
+    flextable() %>%
+    set_header_labels(var = "",
+                      val = "This Week",
+                      level = "Operational Level") %>%
+    bg(j=3, bg = cell_cols) %>%
+    autofit() %>%
+    add_footer_lines(values = glue("{statedatetimeupdated}"))
+
+                          
   
 ```
-
------------------------------------------
-
-### Statewide Conditions
-
-* There are `r state_curr_cases` active cases in the state of New Hampshire. This places the reopening status at the `r pick_color_threshold_str(state_curr_cases, c(-1, 100, 1200, 1800))` level.
-* There are `r state_curr_hosp` currently hospitalized individuals in the state of New Hampshire. This places the reopening status at the `r pick_color_threshold_str(state_curr_hosp, c(-1, 25, 50, 100))` level.
-* The current state restrictions are `r state_curr_cond`.
-* `r statedatetimeupdated`.
 
 -----------------------------------------
 
@@ -956,6 +965,12 @@ be close to overwhelmed.
             mutate(testperID=round(totaltests/pop,1)) %>%
             select(-pop)
 
+  # get the pct post indicators together
+  posdf <- ts_test_res_wk_camp %>%
+           filter(weeks_prior==0) %>%
+           mutate(pct_pos_label = glue("{round(pct_pos*100, 1)}%")) %>%
+           select(campus_fac, pct_pos, pct_pos_label)
+  
   # get case campus conditions indicators together
   casedf <- ts_cases_campus %>% 
             filter(testdate>as.Date(report_date_minus10)) %>%
@@ -980,7 +995,7 @@ be close to overwhelmed.
             mutate(NAvgIsolBedLabel = ifelse(campus_fac=="UNH Durham", 
                                              glue("{round(NAvgIsolBed, 1)} ({round(NAvgIsolBedPct*100, 1)}%)"),
                                              "-")) %>%
-            select(campus_fac, NAvgIsol, NAvgIsolBedLabel)
+            select(campus_fac, NAvgIsol, NAvgIsolBedPct, NAvgIsolBedLabel)
 
   # quarantine indicators
   quardf <- ts_quar_campus %>%
@@ -996,41 +1011,68 @@ be close to overwhelmed.
             mutate(NAvgQuarBedLabel = ifelse(campus_fac=="UNH Durham",
                                              glue("{round(NAvgQuarBed, 1)} ({round(NAvgQuarBedPct*100, 1)}%)"),
                                              "-")) %>%
-            select(campus_fac, NAvgQuar, NAvgQuarBedLabel)
+            select(campus_fac, NAvgQuar, NAvgQuarBedPct, NAvgQuarBedLabel)
   
   # bring all indicators together
-indicatordf <-  left_join(testdf,casedf,by="campus_fac")  %>%
-    left_join(isoldf, by="campus_fac") %>%
-    left_join(quardf, by="campus_fac") %>%
-    filter(!(campus_fac %in% c("Other","Missing"))) %>%
-    # switch the campus from rows to columns
-    gather(Indicator,value,-campus_fac) %>%
-    spread(campus_fac,value) %>%
-    # make character vectors for rounding purposes
-    mutate(`UNH Durham`=as.character(`UNH Durham`))%>%
-    mutate(`UNH Law`=as.character(`UNH Law`))%>%
-    mutate(`UNH Manchester`=as.character(`UNH Manchester`))%>%
-    #need to adjust indicator names and put in order
-    mutate(Indicator=recode_factor(Indicator,
-                            "totaltests"= "Number of tests",
-                            "testperID" = "Tests per unique ID",
-                            "totalpositives"="Total Positive Test Results",
-                            "activeCases"="Active Cases",
-                            "activeCaseRate"="Active Cases per 1000",
-                            "NAvgIsol" = "Average number in isolation this week",
-                            "NAvgIsolBedLabel" = "Average isolation beds in use (n, %)",
-                            "NAvgQuar" = "Average number in quarantine this week",
-                            "NAvgQuarBedLabel" = "Average quarantine beds in use (n, %)"
-                            ))%>%
-    arrange(Indicator) 
+  indicatordf <-  left_join(testdf,casedf,by="campus_fac")  %>%
+                  left_join(posdf %>% select(-pct_pos), by="campus_fac") %>%
+                  left_join(isoldf %>% select(-NAvgIsolBedPct), by="campus_fac") %>%
+                  left_join(quardf %>% select(-NAvgQuarBedPct), by="campus_fac") %>%
+                  filter(!(campus_fac %in% c("Other","Missing"))) %>%
+                  # switch the campus from rows to columns
+                  gather(Indicator,value,-campus_fac) %>%
+                  spread(campus_fac,value) %>%
+                  # make character vectors for rounding purposes
+                  mutate(`UNH Durham`=as.character(`UNH Durham`))%>%
+                  mutate(`UNH Law`=as.character(`UNH Law`))%>%
+                  mutate(`UNH Manchester`=as.character(`UNH Manchester`))%>%
+                  #need to adjust indicator names and put in order
+                  mutate(Indicator=recode_factor(Indicator,
+                                          "totaltests"= "Number of tests",
+                                          "testperID" = "Tests per unique ID",
+                                          "totalpositives"="Total Positive Test Results",
+                                          "pct_pos_label"="Percent Positive (7d average)",
+                                          "activeCases"="Active Cases",
+                                          "activeCaseRate"="Active Cases per 1000",
+                                          "NAvgIsol" = "Average number in isolation this week",
+                                          "NAvgIsolBedLabel" = "Average isolation beds in use (n, %)",
+                                          "NAvgQuar" = "Average number in quarantine this week",
+                                          "NAvgQuarBedLabel" = "Average quarantine beds in use (n, %)"
+                                          ))%>%
+                  arrange(Indicator) 
 
+  active_case_colors <- indicatordf %>%
+                        filter(Indicator == "Active Cases") %>%
+                        select(-Indicator) %>%
+                        mutate_all(function(x){pick_color_threshold(as.numeric(x), thresholds=c(-1, 20, 100, 200))}) %>%
+                        unlist()
+  
+  pct_pos_colors <- posdf %>%
+                    filter(!(campus_fac %in% c("Other","Missing"))) %>%
+                    arrange(campus_fac) %>%
+                    select(pct_pos) %>%
+                    mutate_all(function(x){pick_color_threshold(as.numeric(x), thresholds=c(-1, 0.0025, 0.01, 0.07))}) %>%
+                    unlist()
+    
+  isol_bed_colors <- c(pick_color_threshold(isoldf$NAvgIsolBedPct[isoldf$campus_fac=="UNH Durham"], thresholds=c(-1, 0.1, 0.5, 0.9)),
+                       "#FFFFFF",
+                       "#FFFFFF")
+  
+  quar_bed_colors <- c(pick_color_threshold(quardf$NAvgQuarBedPct[quardf$campus_fac=="UNH Durham"], thresholds=c(-1, 0.25, 0.5, 0.9)),
+                       "#FFFFFF",
+                       "#FFFFFF")
+  
   # make flextable
   indicatordf %>% 
     flextable() %>%
     autofit() %>%
     bold(i=1, part="header") %>%
     set_header_labels(Indicator="") %>%
-    set_caption(caption = cap)
+    set_caption(caption = cap) %>%
+    bg(i=~(Indicator == "Active Cases"), j=2:4, bg = active_case_colors) %>%
+    bg(i=~(Indicator == "Percent Positive (7d average)"), j=2:4, bg = pct_pos_colors) %>%
+    bg(i=~(Indicator == "Average isolation beds in use (n, %)"), j=2:4, bg = isol_bed_colors) %>%
+    bg(i=~(Indicator == "Average quarantine beds in use (n, %)"), j=2:4, bg = quar_bed_colors) 
 
 ```
 
@@ -1293,13 +1335,17 @@ indicatordf <-  left_join(testdf,casedf,by="campus_fac")  %>%
   
     indicatordf %>% 
     select(Indicator, `UNH Durham`) %>%
-    filter(Indicator %in% c("Active Cases", "Active Cases per 1000", "Average number in isolation this week", "Average isolation beds in use (n, %)", "Average number in quarantine this week", "Average quarantine beds in use (n, %)")) %>%
+    filter(Indicator %in% c("Active Cases", "Active Cases per 1000", "Average number in isolation this week", "Average isolation beds in use (n, %)", "Average number in quarantine this week", "Average quarantine beds in use (n, %)", "Percent Positive (7d average)")) %>%
     flextable() %>%
     bold(i=1, part="header") %>%
     set_header_labels(Indicator="",
                       `UNH Durham`="Reporting Period") %>%
     autofit() %>%
-    set_caption(caption = cap)
+    set_caption(caption = cap) %>%
+    bg(i=~(Indicator == "Active Cases"), j=2, bg = active_case_colors[1]) %>%
+    bg(i=~(Indicator == "Percent Positive (7d average)"), j=2, bg = pct_pos_colors[1]) %>%
+    bg(i=~(Indicator == "Average isolation beds in use (n, %)"), j=2, bg = isol_bed_colors[1]) %>%
+    bg(i=~(Indicator == "Average quarantine beds in use (n, %)"), j=2, bg = quar_bed_colors[1]) 
 
 ```
 
@@ -1904,14 +1950,15 @@ indicatordf <-  left_join(testdf,casedf,by="campus_fac")  %>%
   
   indicatordf %>% 
     select(Indicator, `UNH Law`) %>%
-    filter(Indicator %in% c("Active Cases", "Active Cases per 1000")) %>%
+    filter(Indicator %in% c("Active Cases", "Active Cases per 1000", "Percent Positive (7d average)")) %>%
     flextable() %>%
     bold(i=1, part="header") %>%
     set_header_labels(Indicator="",
                       `UNH Law`="Reporting Period") %>%
     autofit() %>%
-    set_caption(caption = cap)
-
+    set_caption(caption = cap)%>%
+    bg(i=~(Indicator == "Active Cases"), j=2, bg = active_case_colors[2]) %>%
+    bg(i=~(Indicator == "Percent Positive (7d average)"), j=2, bg = pct_pos_colors[2]) 
 ```
 
 -----------------------------------------
@@ -2374,13 +2421,15 @@ indicatordf <-  left_join(testdf,casedf,by="campus_fac")  %>%
   
   indicatordf %>% 
     select(Indicator, `UNH Manchester`) %>%
-    filter(Indicator %in% c("Active Cases", "Active Cases per 1000")) %>%
+    filter(Indicator %in% c("Active Cases", "Active Cases per 1000", "Percent Positive (7d average)")) %>%
     flextable() %>%
     bold(i=1, part="header") %>%
     set_header_labels(Indicator="",
                       `UNH Manchester`="Reporting Period") %>%
     autofit() %>%
-    set_caption(caption=cap)
+    set_caption(caption=cap)%>%
+    bg(i=~(Indicator == "Active Cases"), j=2, bg = active_case_colors[3]) %>%
+    bg(i=~(Indicator == "Percent Positive (7d average)"), j=2, bg = pct_pos_colors[3]) 
 
 ```
 
