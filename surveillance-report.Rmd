@@ -730,8 +730,8 @@ params:
                                   neg = sum(neg),
                                   pos_neg = pos + neg,
                                   pct_pos = pos / pos_neg) %>%
-                        mutate(start_date = report_date - 7*weeks_prior,
-                               end_date = report_date - 7*weeks_prior + 6,
+                        mutate(start_date = report_date - 7*weeks_prior - 6,
+                               end_date = report_date - 7*weeks_prior,
                                label = glue("{format(start_date, '%b %d')} - {format(end_date, '%b %d')}"))
 
   ## data frame: number pos, neg, pos+neg by week, campus
@@ -745,8 +745,8 @@ params:
                                     pos_neg = pos + neg,
                                     pct_pos = pos / pos_neg) %>%
                           ungroup() %>%
-                          mutate(start_date = report_date - 7*weeks_prior,
-                                 end_date = report_date - 7*weeks_prior + 6,
+                          mutate(start_date = report_date - 7*weeks_prior - 6,
+                                 end_date = report_date - 7*weeks_prior,
                                  label = glue("{format(start_date, '%b %d')} - {format(end_date, '%b %d')}"))
   
   ## data frame: number pos, neg, pos+neg by week, campus, user_status
@@ -760,8 +760,8 @@ params:
                                    pos_neg = pos + neg,
                                    pct_pos = pos / pos_neg) %>%
                          ungroup() %>%
-                         mutate(start_date = report_date - 7*weeks_prior,
-                                end_date = report_date - 7*weeks_prior + 6,
+                         mutate(start_date = report_date - 7*weeks_prior - 6,
+                                end_date = report_date - 7*weeks_prior,
                                 label = glue("{format(start_date, '%b %d')} - {format(end_date, '%b %d')}"))
   
   ## long versions of quarantine and isolation
@@ -1088,7 +1088,7 @@ be close to overwhelmed.
     theme_bw()+
     scale_fill_brewer("Campus",type = "qual") +
     scale_y_continuous(name = "Cases", breaks=breaks_pretty()) +
-    scale_x_date(name="", date_breaks = "2 weeks", limits = xaxis_entire) +
+    scale_x_date(name="", date_breaks = "1 week", limits = xaxis_entire) +
     theme(legend.position = "bottom", legend.title = element_blank())
       
   cap <- glue("**Figure B{fig_counter}**. Newly reported positive cases, by testing date, in each campus.")
@@ -1271,7 +1271,7 @@ $~$
     theme_bw()+
     scale_fill_brewer("",type = "qual") +
     scale_y_continuous(name = "", breaks=breaks_pretty()) +
-    scale_x_date(name="", breaks="2 weeks", limits = xaxis_entire) +
+    scale_x_date(name="", breaks="1 week", limits = xaxis_entire) +
     theme(legend.position = "bottom", legend.title = element_blank())
       
   cap <- glue("**Figure B{fig_counter}**. Number in quarantine by day, by role, for the entire reporting period.")
@@ -1309,7 +1309,7 @@ $~$
     theme_bw()+
     scale_fill_brewer("",type = "qual") +
     scale_y_continuous(name = "", breaks=breaks_pretty()) +
-    scale_x_date(name="", breaks="2 weeks", limits = xaxis_entire) +
+    scale_x_date(name="", breaks="1 week", limits = xaxis_entire) +
     theme(legend.position = "bottom", legend.title = element_blank())
       
   cap <- glue("**Figure B{fig_counter}**. Number in isolation by day, by role, for the entire reporting period.")
@@ -1368,8 +1368,9 @@ $~$
     theme_bw()+
     scale_fill_brewer("Campus",type = "qual") +
     scale_y_continuous(name = "Cases", breaks=breaks_pretty()) +
-    scale_x_date(name="", breaks="2 weeks", limits = xaxis_entire) +
-    theme(legend.position = "bottom", legend.title = element_blank())
+    scale_x_date(name="", breaks="1 week", limits = xaxis_entire) +
+    theme(legend.position = "bottom", legend.title = element_blank()) +
+    theme(axis.text.x = element_text(angle=45, vjust = 1, hjust=1))
       
   cap <- glue("**Figure C{fig_counter}**. Newly reported positive cases, by testing date, in UNH Durham.")
   fig_counter <- fig_counter + 1
@@ -1709,8 +1710,9 @@ $~$
     theme_bw()+
     scale_fill_brewer("",type = "qual") +
     scale_y_continuous(name = "", breaks=breaks_pretty()) +
-    scale_x_date(name="", breaks="2 weeks", limits = xaxis_entire) +
-    theme(legend.position = "bottom", legend.title = element_blank())
+    scale_x_date(name="", breaks="1 week", limits = xaxis_entire) +
+    theme(legend.position = "bottom", legend.title = element_blank()) +
+    theme(axis.text.x = element_text(angle=45, vjust = 1, hjust=1))
       
   cap <- glue("**Figure C{fig_counter}**. Number in quarantine by day, by location, for the entire reporting period.")
   fig_counter <- fig_counter + 1
@@ -1745,9 +1747,10 @@ $~$
     theme_bw()+
     scale_fill_brewer("",type = "qual") +
     scale_y_continuous(name = "", breaks=breaks_pretty()) +
-    scale_x_date(name="", breaks="2 weeks", limits = xaxis_entire) +
+    scale_x_date(name="", breaks="1 week", limits = xaxis_entire) +
     theme(legend.position = "bottom", legend.title = element_blank()) +
-    geom_hline(aes(yintercept=180), lty=2, col="red")
+    geom_hline(aes(yintercept=180), lty=2, col="red") +
+    theme(axis.text.x = element_text(angle=45, vjust = 1, hjust=1))
       
   cap <- glue("**Figure C{fig_counter}**. Number in quarantine dorm (bed) by day, by location, for the entire reporting period.")
   fig_counter <- fig_counter + 1
@@ -1782,8 +1785,9 @@ $~$
     theme_bw()+
     scale_fill_brewer("",type = "qual") +
     scale_y_continuous(name = "", breaks=breaks_pretty()) +
-    scale_x_date(name="", breaks="2 weeks", limits = xaxis_entire) +
-    theme(legend.position = "bottom", legend.title = element_blank())
+    scale_x_date(name="", breaks="1 week", limits = xaxis_entire) +
+    theme(legend.position = "bottom", legend.title = element_blank()) +
+    theme(axis.text.x = element_text(angle=45, vjust = 1, hjust=1))
       
   cap <- glue("**Figure C{fig_counter}**. Number in isolation by day, by location, for the entire reporting period.")
   fig_counter <- fig_counter + 1
@@ -1818,9 +1822,10 @@ $~$
     theme_bw()+
     scale_fill_brewer("",type = "qual") +
     scale_y_continuous(name = "", breaks=breaks_pretty()) +
-    scale_x_date(name="", breaks="2 weeks", limits = xaxis_entire) +
+    scale_x_date(name="", breaks="1 week", limits = xaxis_entire) +
     theme(legend.position = "bottom", legend.title = element_blank()) +
-    geom_hline(aes(yintercept=59), lty=2, col="red")
+    geom_hline(aes(yintercept=59), lty=2, col="red") +
+    theme(axis.text.x = element_text(angle=45, vjust = 1, hjust=1))
       
   cap <- glue("**Figure C{fig_counter}**. Number in isolation dorm (bed) by day, by location, for the entire reporting period.")
   fig_counter <- fig_counter + 1
@@ -2004,8 +2009,9 @@ $~$
     theme_bw()+
     scale_fill_brewer("Campus",type = "qual") +
     scale_y_continuous(name = "Cases", breaks=breaks_pretty()) +
-    scale_x_date(name="", breaks="2 weeks", limits = xaxis_entire) +
-    theme(legend.position = "bottom", legend.title = element_blank())
+    scale_x_date(name="", breaks="1 week", limits = xaxis_entire) +
+    theme(legend.position = "bottom", legend.title = element_blank()) +
+    theme(axis.text.x = element_text(angle=45, vjust = 1, hjust=1))
       
   cap <- glue("**Figure D{fig_counter}**. Newly reported positive cases, by testing date, in UNH Concord.")
   fig_counter <- fig_counter + 1
@@ -2273,8 +2279,9 @@ $~$
     theme_bw()+
     scale_fill_brewer("",type = "qual") +
     scale_y_continuous(name = "", breaks=breaks_pretty()) +
-    scale_x_date(name="", breaks="2 weeks", limits = xaxis_entire) +
-    theme(legend.position = "bottom", legend.title = element_blank())
+    scale_x_date(name="", breaks="1 week", limits = xaxis_entire) +
+    theme(legend.position = "bottom", legend.title = element_blank()) +
+    theme(axis.text.x = element_text(angle=45, vjust = 1, hjust=1))
       
   cap <- glue("Figure D{fig_counter}. Number in quarantine by day, by location, for the entire reporting period.")
   fig_counter <- fig_counter + 1
@@ -2309,8 +2316,9 @@ $~$
     theme_bw()+
     scale_fill_brewer("",type = "qual") +
     scale_y_continuous(name = "", breaks=breaks_pretty()) +
-    scale_x_date(name="", breaks="2 weeks", limits = xaxis_entire) +
-    theme(legend.position = "bottom", legend.title = element_blank())
+    scale_x_date(name="", breaks="1 week", limits = xaxis_entire) +
+    theme(legend.position = "bottom", legend.title = element_blank()) +
+    theme(axis.text.x = element_text(angle=45, vjust = 1, hjust=1))
       
   cap <- glue("Figure D{fig_counter}. Number in isolation by day, by location, for the entire reporting period.")
   fig_counter <- fig_counter + 1
@@ -2494,8 +2502,9 @@ $~$
     theme_bw()+
     scale_fill_brewer("Campus",type = "qual") +
     scale_y_continuous(name = "Cases", breaks=breaks_pretty()) +
-    scale_x_date(name="", breaks="2 weeks", limits = xaxis_entire) +
-    theme(legend.position = "bottom", legend.title = element_blank())
+    scale_x_date(name="", breaks="1 week", limits = xaxis_entire) +
+    theme(legend.position = "bottom", legend.title = element_blank()) +
+    theme(axis.text.x = element_text(angle=45, vjust = 1, hjust=1))
       
   cap <- glue("Figure E{fig_counter}. Newly reported positive cases, by testing date, in UNH Manchester.")
   fig_counter <- fig_counter + 1
@@ -2766,8 +2775,9 @@ $~$
     theme_bw()+
     scale_fill_brewer("",type = "qual") +
     scale_y_continuous(name = "", breaks=breaks_pretty()) +
-    scale_x_date(name="", breaks="2 weeks", limits = xaxis_entire) +
-    theme(legend.position = "bottom", legend.title = element_blank())
+    scale_x_date(name="", breaks="1 week", limits = xaxis_entire) +
+    theme(legend.position = "bottom", legend.title = element_blank()) +
+    theme(axis.text.x = element_text(angle=45, vjust = 1, hjust=1))
       
   cap <- glue("Figure E{fig_counter}. Number in quarantine by day, by location, for the entire reporting period.")
   fig_counter <- fig_counter + 1
@@ -2802,8 +2812,9 @@ $~$
     theme_bw()+
     scale_fill_brewer("",type = "qual") +
     scale_y_continuous(name = "", breaks=breaks_pretty()) +
-    scale_x_date(name="", breaks="2 weeks", limits = xaxis_entire) +
-    theme(legend.position = "bottom", legend.title = element_blank())
+    scale_x_date(name="", breaks="1 week", limits = xaxis_entire) +
+    theme(legend.position = "bottom", legend.title = element_blank()) +
+    theme(axis.text.x = element_text(angle=45, vjust = 1, hjust=1))
       
   cap <- glue("Figure E{fig_counter}. Number in isolation by day, by location, for the entire reporting period.")
   fig_counter <- fig_counter + 1
