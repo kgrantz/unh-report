@@ -205,7 +205,7 @@ params:
                             mutate(campus_num=ifelse(is.na(campus_num),4,campus_num)) %>%
                             mutate(campus_fac=factor(campus_num,
                                                      levels = 0:4,
-                                                     labels = c("UNH Durham","UNH Law","UNH Manchester","Other","Missing")),
+                                                     labels = c("UNH Durham","UNH Law","UNH Manchester","Other","No Campus Listed")),
                                    campus_num=as.numeric(campus_fac)-1)
   table(individualdemographics$campus, individualdemographics$campus_fac)
   table(individualdemographics$campus_num, individualdemographics$campus_fac)
@@ -1018,7 +1018,7 @@ be close to overwhelmed.
                   left_join(posdf %>% select(-pct_pos), by="campus_fac") %>%
                   left_join(isoldf %>% select(-NAvgIsolBedPct), by="campus_fac") %>%
                   left_join(quardf %>% select(-NAvgQuarBedPct), by="campus_fac") %>%
-                  filter(!(campus_fac %in% c("Other","Missing"))) %>%
+                  filter(!(campus_fac %in% c("Other","No Campus Listed"))) %>%
                   # switch the campus from rows to columns
                   gather(Indicator,value,-campus_fac) %>%
                   spread(campus_fac,value) %>%
@@ -1048,7 +1048,7 @@ be close to overwhelmed.
                         unlist()
   
   pct_pos_colors <- posdf %>%
-                    filter(!(campus_fac %in% c("Other","Missing"))) %>%
+                    filter(!(campus_fac %in% c("Other","No Campus Listed"))) %>%
                     arrange(campus_fac) %>%
                     select(pct_pos) %>%
                     mutate_all(function(x){pick_color_threshold(as.numeric(x), thresholds=c(-1, 0.0025, 0.01, 0.07))}) %>%
@@ -1942,6 +1942,7 @@ $~$
             mutate(var = ifelse(ind==1, var, "")) %>%
             select(-ind)
             
+  ind <- which(tab_c6$var!="")-1
   tab_c6 %>%
     flextable() %>%
     set_header_labels(var = "", 
@@ -1953,7 +1954,9 @@ $~$
     bold(i=1, part="header") %>%
     bold(j=1) %>%
     autofit() %>%
-    set_caption(caption=cap)
+    set_caption(caption=cap) %>%
+    hline(i=ind[ind>0], part="body", border=fp_border(width=0.5,color="gray")) 
+
   
 ```
 
@@ -2426,7 +2429,8 @@ $~$
               ungroup() %>%
               mutate(var = ifelse(ind==1, var, "")) %>%
               select(-ind)
-              
+    
+    ind <- which(tab_d6$var!="")-1
     tab_d6 %>%
       flextable() %>%
       set_header_labels(var = "", 
@@ -2438,7 +2442,8 @@ $~$
       bold(i=1, part="header") %>%
       bold(j=1) %>%
       autofit() %>%
-      set_caption(caption=cap)
+      set_caption(caption=cap) %>%
+      hline(i=ind[ind>0], part="body", border=fp_border(width=0.5,color="gray")) 
     }
   
 ```
@@ -2917,7 +2922,8 @@ $~$
             ungroup() %>%
             mutate(var = ifelse(ind==1, var, "")) %>%
             select(-ind)
-            
+    
+  ind <- which(tab_e6$var!="")-1
   tab_e6 %>%
     flextable() %>%
     set_header_labels(var = "", 
@@ -2929,7 +2935,8 @@ $~$
     bold(i=1, part="header") %>%
     bold(j=1) %>%
     autofit() %>%
-    set_caption(caption=cap)
+    set_caption(caption=cap) %>%
+    hline(i=ind[ind>0], part="body", border=fp_border(width=0.5,color="gray")) 
   
 ```
 
