@@ -2279,7 +2279,7 @@ be close to overwhelmed.
     scale_x_date(name="", breaks="2 weeks", limits = xaxis_entire) +
     theme(legend.position = "bottom", legend.title = element_blank())
       
-  cap <- glue("Figure D{fig_counter}. Number in isolation by day, by location, for the entire reporting period")
+  cap <- glue("Figure D{fig_counter}. Number in isolation by day, by location, for the entire reporting period.")
   fig_counter <- fig_counter + 1
   
 ```
@@ -2317,7 +2317,7 @@ be close to overwhelmed.
     # by dorm area
     # by college
   
-  cap <- glue("Table D{tab_counter}. Cumulative and current cases at UNH Concord")
+  cap <- glue("Table D{tab_counter}. Cumulative and current cases at UNH Concord.")
   tab_counter <- tab_counter + 1 
   
   cases_law <- cases %>%
@@ -2518,7 +2518,7 @@ be close to overwhelmed.
     theme_bw() +
     theme(axis.text.x = element_text(angle=45, vjust = 1, hjust=1))
     
-  cap <- glue("Figure E{fig_counter}. Proportion of positive tests over all negative and positive tests in UNH Manchester")
+  cap <- glue("Figure E{fig_counter}. Proportion of positive tests over all negative and positive tests in UNH Manchester.")
   fig_counter <- fig_counter + 1
   
 ```
@@ -2572,7 +2572,7 @@ be close to overwhelmed.
 
   ## by role + total, last seven days: most recent result positive, neg, incon, invalid
     
-  cap <- glue("Table E{tab_counter}. Most recent lab result for each individual submitting a sample in the reporting period at UNH Manchester")
+  cap <- glue("Table E{tab_counter}. Most recent lab result for each individual submitting a sample in the reporting period at UNH Manchester.")
   tab_counter <- tab_counter + 1 
   
   recent_rep_man <- demo_testing_recent %>%
