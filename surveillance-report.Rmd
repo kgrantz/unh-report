@@ -911,7 +911,7 @@ be close to overwhelmed.
                           val = c(state_curr_cases, state_curr_hosp, state_curr_cond),
                           level = c(pick_color_threshold_str(state_curr_cases, thresholds=c(0, 100, 1200, 1800)),
                                     pick_color_threshold_str(state_curr_hosp, thresholds = c(0, 25, 50, 100)),
-                                    "www.nh.gov/covid19"))
+                                    "link"))
   
   cell_cols <- c(pick_color_threshold(state_curr_cases, thresholds=c(0, 100, 1200, 1800)),
                  pick_color_threshold(state_curr_hosp, thresholds = c(0, 25, 50, 100)),
@@ -922,6 +922,7 @@ be close to overwhelmed.
                       val = "This Week",
                       level = "Operational Level") %>%
     bg(j=3, bg = cell_cols) %>%
+    compose(i=3, j=3, value=as_paragraph("More info: ", hyperlink_text(x="www.nh.gov/covid19", url="https://www.nh.gov/covid19"))) %>%
     autofit() %>%
     add_footer_lines(values = glue("{statedatetimeupdated}"))
 
