@@ -6,8 +6,8 @@ output:
     toc_float: TRUE
     theme: journal
 params:
-  run_checks: FALSE # whether to run and print out basic data checks
-  show_cleaning: FALSE # whether to print out basic info about data cleaning steps
+  run_checks: TRUE # whether to run and print out basic data checks
+  show_cleaning: TRUE # whether to print out basic info about data cleaning steps
   concord: TRUE #indicate whether to run extra graphics for concord
   manchester: TRUE #indicate whether to run extra graphics for manchester
   report_date: "2020-11-13" # date in YYYY-MM-DD
