@@ -10,7 +10,7 @@ params:
   show_cleaning: FALSE # whether to print out basic info about data cleaning steps
   concord: TRUE #indicate whether to run extra graphics for concord
   manchester: TRUE #indicate whether to run extra graphics for manchester
-  report_date: "2020-11-06" # date in YYYY-MM-DD
+  report_date: "2020-11-13" # date in YYYY-MM-DD
   state_conditions: "Limited Open"
 ---
 
@@ -1091,7 +1091,8 @@ be close to overwhelmed.
     scale_fill_brewer("Campus",type = "qual") +
     scale_y_continuous(name = "Cases", breaks=breaks_pretty()) +
     scale_x_date(name="", date_breaks = "1 week", limits = xaxis_entire) +
-    theme(legend.position = "bottom", legend.title = element_blank())
+    theme(legend.position = "bottom", legend.title = element_blank()) +
+    theme(axis.text.x = element_text(angle=45, vjust = 1, hjust=1))
       
   cap <- glue("**Figure B{fig_counter}**. Newly reported positive cases, by testing date, in each campus.")
   fig_counter <- fig_counter + 1
@@ -1287,7 +1288,8 @@ $~$
     scale_fill_brewer("",type = "qual") +
     scale_y_continuous(name = "", breaks=breaks_pretty()) +
     scale_x_date(name="", breaks="1 week", limits = xaxis_entire) +
-    theme(legend.position = "bottom", legend.title = element_blank())
+    theme(legend.position = "bottom", legend.title = element_blank()) +
+    theme(axis.text.x = element_text(angle=45, vjust = 1, hjust=1))
       
   cap <- glue("**Figure B{fig_counter}**. Number in quarantine by day, by role, for the entire reporting period.")
   fig_counter <- fig_counter + 1
@@ -1330,7 +1332,8 @@ $~$
     scale_fill_brewer("",type = "qual") +
     scale_y_continuous(name = "", breaks=breaks_pretty()) +
     scale_x_date(name="", breaks="1 week", limits = xaxis_entire) +
-    theme(legend.position = "bottom", legend.title = element_blank())
+    theme(legend.position = "bottom", legend.title = element_blank()) +
+    theme(axis.text.x = element_text(angle=45, vjust = 1, hjust=1))
       
   cap <- glue("**Figure B{fig_counter}**. Number in isolation by day, by role, for the entire reporting period.")
   fig_counter <- fig_counter + 1
