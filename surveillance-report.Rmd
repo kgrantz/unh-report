@@ -6,11 +6,11 @@ output:
     toc_float: TRUE
     theme: journal
 params:
-  run_checks: TRUE # whether to run and print out basic data checks
-  show_cleaning: TRUE # whether to print out basic info about data cleaning steps
+  run_checks: FALSE # whether to run and print out basic data checks
+  show_cleaning: FALSE # whether to print out basic info about data cleaning steps
   concord: TRUE #indicate whether to run extra graphics for concord
   manchester: TRUE #indicate whether to run extra graphics for manchester
-  report_date: "2020-11-13" # date in YYYY-MM-DD
+  report_date: "2020-11-11" # date in YYYY-MM-DD
   state_conditions: "Limited Open"
 ---
 
@@ -843,38 +843,8 @@ Data reported as of: `r format(Sys.Date(), "%B %d, %Y")`
 
 ## SECTION A: EXECUTIVE SUMMARY
 
-**Overall**
 
-* In the state of New Hampshire, current cases and hospitalizations have increased. The number of current cases (1,903) has shifted operational level from orange to red and the number of hospitalizations (55) has shifted operational level from yellow to orange.
-
-* In the UNH community, the number of new positive tests rose from last week (61 this vs. 35 last people with new positive results, per complete data)
-
-* Number in quarantine and isolation is trending upwards compared with previous weeks
-
-**At the Durham campus:**
-
-* Cases among students continue to increase
-
-* 32/42 new student cases did not have a dorm listed (likely live off campus). Student cases are more commonly 20+ years old (30/42) and female (32/42). The highest number of cases was reported among students in the health college.
-
-* The percent positive (out of all positive & negative tests) is increasing (see Figure B.3) and is is comparable to the positivity early in the semester (August)
-
-* There was a rise in tests with invalid results compared to last week
-
-* Based on current isolation beds in use, the campus remains at the yellow trigger level
-(44.1% of isolation beds are in use this week), but is getting close to the red trigger level.
-
-* If the number of new cases remain at this week’s rate, we project that isolation beds will
-be close to overwhelmed.
-
-**At the Concord Law campus:**
-
-* No new cases reported this week
-
-**At the Manchester campus:**
-
-* One new case was reported this week.
-
+*Intentionally blank*
 
 -----------------------------------------
 
