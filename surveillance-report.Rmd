@@ -1024,17 +1024,15 @@ Data reported as of: `r format(Sys.Date(), "%B %d, %Y")`
   pct_pos_colors <- posdf %>%
                     filter(!(campus_fac %in% c("Other","No Campus Listed"))) %>%
                     arrange(campus_fac) %>%
-                    select(pct_pos) %>%
-                    mutate_all(function(x){pick_color_threshold(as.numeric(x), thresholds=c(-1, 0.0025, 0.01, 0.07))}) %>%
+                    group_by(campus_fac) %>%
+                    mutate(col=pick_color_threshold(as.numeric(pct_pos), thresholds=c(-1, 0.0025, 0.01, 0.07))) %>%
+                    ungroup() %>%
+                    select(col) %>%
                     unlist()
     
-  isol_bed_colors <- c(pick_color_threshold(isoldf$NAvgIsolBedPct[isoldf$campus_fac=="UNH Durham"], thresholds=c(-1, 0.1, 0.5, 0.9)),
-                       "#FFFFFF",
-                       "#FFFFFF")
-  
-  quar_bed_colors <- c(pick_color_threshold(quardf$NAvgQuarBedPct[quardf$campus_fac=="UNH Durham"], thresholds=c(-1, 0.25, 0.5, 0.9)),
-                       "#FFFFFF",
-                       "#FFFFFF")
+  isol_bed_color_unh <- pick_color_threshold(isoldf$NAvgIsolBedPct[isoldf$campus_fac=="UNH Durham"]*100, thresholds=c(-1, 10, 50, 90))
+                                             
+  quar_bed_color_unh <- pick_color_threshold(quardf$NAvgQuarBedPct[quardf$campus_fac=="UNH Durham"]*100, thresholds=c(-1, 25, 50, 90))
   
   # make flextable
   indicatordf %>% 
@@ -1044,8 +1042,8 @@ Data reported as of: `r format(Sys.Date(), "%B %d, %Y")`
     set_caption(caption = cap) %>%
     bg(i=~(Indicator == "Active Cases"), j=2:4, bg = active_case_colors) %>%
     bg(i=~(Indicator == "Percent Positive (7d average)"), j=2:4, bg = pct_pos_colors) %>%
-    bg(i=~(Indicator == "Average isolation beds in use (n, %)"), j=2:4, bg = isol_bed_colors) %>%
-    bg(i=~(Indicator == "Average quarantine beds in use (n, %)"), j=2:4, bg = quar_bed_colors) %>%
+    bg(i=~(Indicator == "Average isolation beds in use (n, %)"), j=2, bg = isol_bed_color_unh) %>%
+    bg(i=~(Indicator == "Average quarantine beds in use (n, %)"), j=2, bg = quar_bed_color_unh) %>%
     autofit() 
 
 ```
@@ -1345,8 +1343,8 @@ $~$
     set_caption(caption = cap) %>%
     bg(i=~(Indicator == "Active Cases"), j=2, bg = active_case_colors[1]) %>%
     bg(i=~(Indicator == "Percent Positive (7d average)"), j=2, bg = pct_pos_colors[1]) %>%
-    bg(i=~(Indicator == "Average isolation beds in use (n, %)"), j=2, bg = isol_bed_colors[1]) %>%
-    bg(i=~(Indicator == "Average quarantine beds in use (n, %)"), j=2, bg = quar_bed_colors[1]) %>%
+    bg(i=~(Indicator == "Average isolation beds in use (n, %)"), j=2, bg = isol_bed_color_unh) %>%
+    bg(i=~(Indicator == "Average quarantine beds in use (n, %)"), j=2, bg = quar_bed_color_unh) %>%
     autofit()
 
 ```
