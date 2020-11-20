@@ -10,7 +10,7 @@ params:
   show_cleaning: FALSE # whether to print out basic info about data cleaning steps
   concord: TRUE #indicate whether to run extra graphics for concord
   manchester: TRUE #indicate whether to run extra graphics for manchester
-  report_date: "2020-11-13" # date in YYYY-MM-DD
+  report_date: "2020-11-17" # date in YYYY-MM-DD
   state_conditions: "Limited Open"
 ---
 
@@ -849,39 +849,7 @@ Data reported as of: `r format(Sys.Date(), "%B %d, %Y")`
 
 ## SECTION A: EXECUTIVE SUMMARY
 
-**Statewide conditions**
-
-* The number of *statewide* cases continue to rise above and beyond the red trigger threshold. The number of hospitalizations has increased 25% but remains in the orange.
-
-
-**Campus-wide**
-
-* Though this week’s percent positivity has increased since last week, the number remains in the yellow trigger threshold.
-
-
-**At Durham**
-
-* The number of active cases has switched from the yellow to orange trigger threshold. 
-
-* There was a 633% increase in the number of active cases in dorms — distributed throughout across living areas on campus. There is a somewhat larger number in the Timbers (n=25) currently, as compared to other living areas. Off-campus cases continue to rise at a similar rate as the last reporting period.
-
-* Increases in cases were greatest in the Business school (337% increase) as well as the liberal arts and Engineering (both 166% increases).
-
-* Though the largest number of cases occurred among students, faculty is also seeing increases that appear to parallel statewide conditions.
-
-* The number of isolation beds in use has jumped from yellow to red. Cases may need to begin sharing rooms in the isolation dorm.
-
-* Quarantine beds on campus remain at less than half of capacity.
-
-
-**At Concord**
-
-* No new cases reported
-
-
-**At Manchester**
-
-* No new cases reported
+*Intentionally left blank*
 
 -----------------------------------------
 
