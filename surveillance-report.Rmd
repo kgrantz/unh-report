@@ -2891,12 +2891,21 @@ $~$
   
   cases_man <- cases %>%
                filter(campus_fac == "UNH Manchester") %>%
-               mutate(level = "Total") %>%
-               bind_rows(cases %>%
-                         filter(campus_fac == "UNH Manchester") %>%
-                         filter(testdate > report_date_minus14 & testdate <= report_date) %>%
-                         mutate(level = ifelse(testdate > report_date_minus7, "Current", "Previous"))) %>%
-               mutate(level = factor(level, levels=c("Total", "Current", "Previous")))
+               mutate(level = "Total") 
+  
+  #Forrest removed this piece
+  # %>%
+  #              bind_rows(cases %>%
+  #                        filter(campus_fac == "UNH Manchester") %>%
+  #                        filter(testdate > report_date_minus14 & testdate <= report_date) %>%
+  #                        mutate(level = ifelse(testdate > report_date_minus7, "Current", "Previous"))) %>%
+  #              mutate(level = factor(level, levels=c("Total", "Current", "Previous")))
+  
+  if(nrow(cases_law)==0){ 
+        print("No cases in UNH Manchester for reporting period")}else{
+                
+  cases_man <- cases_man %>% mutate(level = factor(level, levels=c("Total", "Current", "Previous")))
+
 
   cases_tot <- cases_man %>%
                group_by(level, .drop = FALSE) %>%
@@ -2980,6 +2989,8 @@ $~$
     autofit() %>%
     set_caption(caption=cap) %>%
     hline(i=ind[ind>0], part="body", border=fp_border(width=0.5,color="gray")) 
+  
+        }
   
 ```
 
