@@ -10,7 +10,7 @@ params:
   show_cleaning: FALSE # whether to print out basic info about data cleaning steps
   concord: TRUE #indicate whether to run extra graphics for concord
   manchester: TRUE #indicate whether to run extra graphics for manchester
-  report_date: "2020-11-22" # date in YYYY-MM-DD
+  report_date: "2020-11-28" # date in YYYY-MM-DD
   state_conditions: "Limited Open"
 ---
 
