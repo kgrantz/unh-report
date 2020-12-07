@@ -1025,7 +1025,7 @@ Data reported as of: `r format(Sys.Date(), "%B %d, %Y")`
                         unlist()
 
   pct_pos_colors <- posdf %>%
-                    filter(!(campus_fac %in% c("Other","No Campus Listed"))) %>%
+                    filter(campus_fac %in% c("UNH Durham","UNH Manchester", "UNH Law")) %>%
                     arrange(campus_fac) %>%
                     group_by(campus_fac) %>%
                     mutate(col=pick_color_threshold(as.numeric(pct_pos), thresholds=c(-1, 0.0025, 0.01, 0.07))) %>%
