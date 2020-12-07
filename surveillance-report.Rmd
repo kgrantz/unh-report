@@ -995,7 +995,7 @@ Data reported as of: `r format(Sys.Date(), "%B %d, %Y")`
                   left_join(posdf %>% select(-pct_pos), by="campus_fac") %>%
                   left_join(isoldf %>% select(-NAvgIsolBedPct), by="campus_fac") %>%
                   left_join(quardf %>% select(-NAvgQuarBedPct), by="campus_fac") %>%
-                  filter(!(campus_fac %in% c("Other","No Campus Listed"))) %>%
+                  filter(campus_fac %in% c("UNH Durham","UNH Manchester", "UNH Law")) %>%
                   # switch the campus from rows to columns
                   gather(Indicator,value,-campus_fac) %>%
                   spread(campus_fac,value) %>%
@@ -1046,69 +1046,7 @@ Data reported as of: `r format(Sys.Date(), "%B %d, %Y")`
                         ungroup() %>%
                         select(col) %>%
                         unlist()
-```
 
-```{r Table-B1B-CampusCond-12-full}
-  # make flextable
-  indicatordf %>% 
-    flextable() %>%
-    bold(i=1, part="header") %>%
-    set_header_labels(Indicator="") %>%
-    set_caption(caption = cap) %>%
-    # bg(i=~(Indicator == "Active Cases"), j=2:4, bg = active_case_colors) %>%
-    # bg(i=~(Indicator == "Percent Positive (7d average)"), j=2:4, bg = pct_pos_colors) %>%
-    # bg(i=~(Indicator == "Average isolation beds in use (n, %)"), j=2, bg = isol_bed_color_unh) %>%
-    # bg(i=~(Indicator == "Average quarantine beds in use (n, %)"), j=2, bg = quar_bed_color_unh) %>%
-    autofit() 
-
-```
-
-```{r Table-B1B-CampusCond-12A}
-  # make flextable
-  indicatordf %>% 
-    flextable() %>%
-    bold(i=1, part="header") %>%
-    set_header_labels(Indicator="") %>%
-    set_caption(caption = cap) %>%
-    # bg(i=~(Indicator == "Active Cases"), j=2:4, bg = active_case_colors) %>%
-    bg(i=~(Indicator == "Percent Positive (7d average)"), j=2:4, bg = pct_pos_colors) %>%
-    bg(i=~(Indicator == "Average isolation beds in use (n, %)"), j=2, bg = isol_bed_color_unh) %>%
-    bg(i=~(Indicator == "Average quarantine beds in use (n, %)"), j=2, bg = quar_bed_color_unh) %>%
-    autofit() 
-
-```
-
-```{r Table-B1B-CampusCond-12B}
-  # make flextable
-  indicatordf %>% 
-    flextable() %>%
-    bold(i=1, part="header") %>%
-    set_header_labels(Indicator="") %>%
-    set_caption(caption = cap) %>%
-    bg(i=~(Indicator == "Active Cases"), j=2:4, bg = active_case_colors) %>%
-    # bg(i=~(Indicator == "Percent Positive (7d average)"), j=2:4, bg = pct_pos_colors) %>%
-    bg(i=~(Indicator == "Average isolation beds in use (n, %)"), j=2, bg = isol_bed_color_unh) %>%
-    bg(i=~(Indicator == "Average quarantine beds in use (n, %)"), j=2, bg = quar_bed_color_unh) %>%
-    autofit() 
-
-```
-
-```{r Table-B1B-CampusCond-12C}
-  # make flextable
-  indicatordf %>% 
-    flextable() %>%
-    bold(i=1, part="header") %>%
-    set_header_labels(Indicator="") %>%
-    set_caption(caption = cap) %>%
-    bg(i=~(Indicator == "Active Cases"), j=2:4, bg = active_case_colors) %>%
-    bg(i=~(Indicator == "Percent Positive (7d average)"), j=2:4, bg = pct_pos_colors) %>%
-    # bg(i=~(Indicator == "Average isolation beds in use (n, %)"), j=2, bg = isol_bed_color_unh) %>%
-    bg(i=~(Indicator == "Average quarantine beds in use (n, %)"), j=2, bg = quar_bed_color_unh) %>%
-    autofit() 
-
-```
-
-```{r Table-B1B-CampusCond-12D}
   # make flextable
   indicatordf %>% 
     flextable() %>%
@@ -1118,7 +1056,7 @@ Data reported as of: `r format(Sys.Date(), "%B %d, %Y")`
     bg(i=~(Indicator == "Active Cases"), j=2:4, bg = active_case_colors) %>%
     bg(i=~(Indicator == "Percent Positive (7d average)"), j=2:4, bg = pct_pos_colors) %>%
     bg(i=~(Indicator == "Average isolation beds in use (n, %)"), j=2, bg = isol_bed_color_unh) %>%
-    # bg(i=~(Indicator == "Average quarantine beds in use (n, %)"), j=2, bg = quar_bed_color_unh) %>%
+    bg(i=~(Indicator == "Average quarantine beds in use (n, %)"), j=2, bg = quar_bed_color_unh) %>%
     autofit() 
 
 ```
