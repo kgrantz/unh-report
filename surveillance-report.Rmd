@@ -910,7 +910,7 @@ Data reported as of: `r format(Sys.Date(), "%B %d, %Y")`
 
 ### Conditions at Three Campuses
 
-```{r Table-B1B-CampusCond}
+```{r Table-B1B-CampusCond-1}
 
   # BY CAMPUS + THRESHOLD INDICATOR if applicable
     # Total tests, including repeats
@@ -929,7 +929,10 @@ Data reported as of: `r format(Sys.Date(), "%B %d, %Y")`
   testingpop <- individualdemographics %>% 
                 group_by(campus_fac) %>%
                 summarise(pop=n())
+```
 
+
+```{r Table-B1B-CampusCond-2}
   # get test campus conditions indicators together
   testdf <- ts_test_res %>% 
             filter(testdate>as.Date(report_date_minus7)) %>%
@@ -941,13 +944,17 @@ Data reported as of: `r format(Sys.Date(), "%B %d, %Y")`
             left_join(testingpop,by="campus_fac")%>%
             mutate(testperID=round(totaltests/pop,1)) %>%
             select(-pop)
+```
 
+```{r Table-B1B-CampusCond-3}
   # get the pct post indicators together
   posdf <- ts_test_res_wk_camp %>%
            filter(weeks_prior==0) %>%
            mutate(pct_pos_label = glue("{round(pct_pos*100, 1)}%")) %>%
            select(campus_fac, pct_pos, pct_pos_label)
-  
+```
+
+```{r Table-B1B-CampusCond-4}
   # get case campus conditions indicators together
   casedf <- ts_cases_campus %>% 
             filter(testdate>as.Date(report_date_minus10)) %>%
@@ -957,7 +964,9 @@ Data reported as of: `r format(Sys.Date(), "%B %d, %Y")`
             left_join(testingpop,by="campus_fac")%>%
             mutate(activeCaseRate=round(activeCases/pop*1000,1))%>%
             select(-pop)
+```
 
+```{r Table-B1B-CampusCond-5}
   # isolation indicators
   isoldf <- ts_isol_campus %>%
             filter(date>as.Date(report_date_minus7)) %>%
@@ -973,7 +982,9 @@ Data reported as of: `r format(Sys.Date(), "%B %d, %Y")`
                                              glue("{round(NAvgIsolBed, 1)} ({round(NAvgIsolBedPct*100, 1)}%)"),
                                              "-")) %>%
             select(campus_fac, NAvgIsol, NAvgIsolBedPct, NAvgIsolBedLabel)
+```
 
+```{r Table-B1B-CampusCond-6}
   # quarantine indicators
   quardf <- ts_quar_campus %>%
             filter(date>as.Date(report_date_minus7)) %>%
@@ -989,7 +1000,9 @@ Data reported as of: `r format(Sys.Date(), "%B %d, %Y")`
                                              glue("{round(NAvgQuarBed, 1)} ({round(NAvgQuarBedPct*100, 1)}%)"),
                                              "-")) %>%
             select(campus_fac, NAvgQuar, NAvgQuarBedPct, NAvgQuarBedLabel)
-  
+```
+
+```{r Table-B1B-CampusCond-7}
   # bring all indicators together
   indicatordf <-  left_join(testdf,casedf,by="campus_fac")  %>%
                   left_join(posdf %>% select(-pct_pos), by="campus_fac") %>%
@@ -1017,13 +1030,17 @@ Data reported as of: `r format(Sys.Date(), "%B %d, %Y")`
                                           "NAvgQuarBedLabel" = "Average quarantine beds in use (n, %)"
                                           ))%>%
                   arrange(Indicator) 
+```
 
+```{r Table-B1B-CampusCond-8}
   active_case_colors <- indicatordf %>%
                         filter(Indicator == "Active Cases") %>%
                         select(-Indicator) %>%
                         mutate_all(function(x){pick_color_threshold(as.numeric(x), thresholds=c(-1, 20, 100, 200))}) %>%
                         unlist()
-  
+```
+
+```{r Table-B1B-CampusCond-9}
   pct_pos_colors <- posdf %>%
                     filter(!(campus_fac %in% c("Other","No Campus Listed"))) %>%
                     arrange(campus_fac) %>%
@@ -1032,21 +1049,27 @@ Data reported as of: `r format(Sys.Date(), "%B %d, %Y")`
                     ungroup() %>%
                     select(col) %>%
                     unlist()
-    
+```
+
+```{r Table-B1B-CampusCond-10}
   isol_bed_color_unh <- isoldf %>%
                         filter(campus_fac=="UNH Durham") %>%
                         mutate(col = pick_color_threshold(as.numeric(NAvgIsolBedPct)*100, thresholds=c(-1, 10, 50, 90))) %>%
                         ungroup() %>%
                         select(col) %>%
                         unlist()
+```
 
+```{r Table-B1B-CampusCond-11}
   quar_bed_color_unh <- quardf %>%
                         filter(campus_fac=="UNH Durham") %>%
                         mutate(col = pick_color_threshold(as.numeric(NAvgQuarBedPct)*100, thresholds=c(-1, 25, 50, 90))) %>%
                         ungroup() %>%
                         select(col) %>%
                         unlist()
-  
+```
+
+```{r Table-B1B-CampusCond-12}
   # make flextable
   indicatordf %>% 
     flextable() %>%
