@@ -16,7 +16,7 @@ params:
 
 
 ```{r setup, include=FALSE}
-  knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message = FALSE, fig.topcaption = TRUE, error=TRUE)
+  knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message = FALSE, fig.topcaption = TRUE)
   knitr::opts_knit$set(eval.after = 'fig.cap')
 
   fig_counter <- 1
