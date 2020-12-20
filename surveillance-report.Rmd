@@ -10,7 +10,7 @@ params:
   show_cleaning: FALSE # whether to print out basic info about data cleaning steps
   concord: TRUE #indicate whether to run extra graphics for concord
   manchester: TRUE #indicate whether to run extra graphics for manchester
-  report_date: "2020-12-18" # date in YYYY-MM-DD
+  report_date: "AUTO" # if "AUTO", takes Sys.Date()-2; otherwise specify as YYYY-MM-DD
   state_conditions: "Limited Open"
 ---
 
@@ -65,7 +65,13 @@ params:
 
 ```{r params}
 
-  report_date <- as.Date(params$report_date)
+  
+  if(params$report_date=="AUTO"){
+    report_date <- Sys.Date() - 2
+  }else{
+    report_date <- as.Date(params$report_date)
+  }
+  
   report_date_str_long <- as.character(format(report_date, format="%B %d, 2020"))
   report_date_str_short <- as.character(format(report_date, format="%b %d"))
   
