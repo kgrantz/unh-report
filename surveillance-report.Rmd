@@ -879,7 +879,7 @@ Data reported as of: `r format(Sys.Date(), "%B %d, %Y")`
     html_text()
 
   state_curr_cases <- as.numeric(gsub(",", "", covid_num[4]))
-  state_curr_hosp <- as.numeric(gsub(",", "", covid_num[6]))
+  state_curr_hosp <- as.numeric(gsub(",", "", covid_num[5]))
   state_curr_cond <- params$state_conditions
 
   statedatetimeupdated <- statecondwebsite %>%
