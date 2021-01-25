@@ -1222,7 +1222,7 @@ $~$
   ## by week, # pos / (# pos + # neg)
 
   rng <- ceiling(max(ts_test_res_wk_all$pct_pos, na.rm = TRUE)*1000)/1000
-  brks <- seq(0, rng, 0.0005)
+  brks <- seq(0, rng, 0.005)
   xbrks <- ts_test_res_wk_all$start_date
   xlab <- ts_test_res_wk_all$label
   
@@ -1440,7 +1440,7 @@ $~$
 
   ## by week, # pos / (# pos + # neg)
   rng <- ceiling(max(ts_test_res_wk_camp$pct_pos[ts_test_res_wk_camp$campus_fac=="UNH Durham"], na.rm = TRUE)*1000)/1000
-  brks <- seq(0, rng, 0.0005)
+  brks <- seq(0, rng, 0.005)
   xbrks <- ts_test_res_wk_all$start_date
   xlab <- ts_test_res_wk_all$label
   
@@ -2102,7 +2102,7 @@ $~$
 
   ## by week, # pos / (# pos + # neg)
   rng <- ceiling(max(ts_test_res_wk_camp$pct_pos[ts_test_res_wk_camp$campus_fac=="UNH Law"], na.rm = TRUE)*1000)/1000
-  brks <- seq(0, rng, 0.0005)
+  brks <- seq(0, rng, 0.005)
   xbrks <- ts_test_res_wk_all$start_date
   xlab <- ts_test_res_wk_all$label
   
@@ -2599,7 +2599,7 @@ $~$
 
   ## by week, # pos / (# pos + # neg)
   rng <- ceiling(max(ts_test_res_wk_camp$pct_pos[ts_test_res_wk_camp$campus_fac=="UNH Manchester"], na.rm = TRUE)*1000)/1000
-  brks <- seq(0, rng, 0.0005)
+  brks <- seq(0, rng, 0.005)
   xbrks <- ts_test_res_wk_all$start_date
   xlab <- ts_test_res_wk_all$label
   
