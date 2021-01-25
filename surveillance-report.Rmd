@@ -72,12 +72,12 @@ params:
     report_date <- as.Date(params$report_date)
   }
   
-  report_date_str_long <- as.character(format(report_date, format="%B %d, 2020"))
+  report_date_str_long <- as.character(format(report_date, format="%B %d, %Y"))
   report_date_str_short <- as.character(format(report_date, format="%b %d"))
   
   # Date on which report begins (inclusive)
   start_date <- report_date - 6
-  start_date_str_long <- as.character(format(start_date, format="%B %d, 2020"))
+  start_date_str_long <- as.character(format(start_date, format="%B %d, %Y"))
   start_date_str_short <- as.character(format(start_date, format="%b %d"))
   
   # Date to which active cases are counted
@@ -496,7 +496,7 @@ params:
                filter(!is.na(quar_entrydate))
 
   ## any weird dates?
-  reasonable_dates <- as.Date(as.Date("2020-01-01"):as.Date("2021-01-01"), origin="1970-01-01")
+  reasonable_dates <- as.Date(as.Date("2020-01-01"):as.Date("2022-01-01"), origin="1970-01-01")
   demo_quar %>%
     filter(!(quar_entrydate %in% reasonable_dates) | !(quar_exitdate %in% reasonable_dates)) %>%
     group_by(campus_fac, user_status_fac) %>%
@@ -795,7 +795,7 @@ params:
   
   ## data frame: number in quarantine by campus, testdate
   ts_quar_campus <- demo_quar_long %>%
-                    group_by(date, campus_fac) %>%
+                    group_by(date, campus_fac, off_campus_fac) %>%
                     summarize(n = n_distinct(uid),
                               nbed = sum(quar_isol_bed, na.rm=TRUE)) %>%
                     ungroup() %>%
@@ -819,7 +819,7 @@ params:
 
   ## data frame: number in isolation by campus, testdate
   ts_isol_campus <- demo_isol_long %>%
-                    group_by(date, campus_fac) %>%
+                    group_by(date, campus_fac, off_campus_fac) %>%
                     summarize(n = n_distinct(uid),
                               nbed = sum(quar_isol_bed, na.rm=TRUE)) %>%
                     ungroup() %>%
@@ -1769,16 +1769,16 @@ $~$
 
   ## number quarantine beds in use by day
   ggplot(ts_quar_campus %>% filter(campus_fac == "UNH Durham"), aes(x=date, y=nbed)) +
-    geom_col(width=0.9, fill="#120075")+
+    geom_col(aes(fill=off_campus_fac))+
     theme_bw()+
-    scale_fill_brewer("",type = "qual") +
+    scale_fill_brewer("",palette="Dark2") +
     scale_y_continuous(name = "", breaks=breaks_pretty()) +
     scale_x_date(name="", breaks="1 week", limits = xaxis_entire) +
     theme(legend.position = "bottom", legend.title = element_blank()) +
     geom_hline(aes(yintercept=180), lty=2, col="red") +
     theme(axis.text.x = element_text(angle=45, vjust = 1, hjust=1))
       
-  cap <- glue("**Figure C{fig_counter}**. Number in quarantine dorm (bed) by day, by location, for the entire reporting period.")
+  cap <- glue("**Figure C{fig_counter}**. Number in quarantine dorm (bed) by day, by residence location, for the entire reporting period.")
   fig_counter <- fig_counter + 1
   
 ```
@@ -1787,18 +1787,22 @@ $~$
 
 ```{r Figure-C8-QuarBeds-7day, fig.cap=cap}
 
+  ts_quar_campus_tmp <- ts_quar_campus %>% filter(campus_fac == "UNH Durham" & date > report_date_minus7 & date <= report_date)
+
+  label_height = max(c(ts_quar_campus_tmp$nbed, 180), na.rm=TRUE)
+  
   ## number quarantine beds in use by day, past 7 days
-  ggplot(ts_quar_campus %>% filter(campus_fac == "UNH Durham" & date > report_date_minus7 & date <= report_date), aes(x=date, y=nbed)) +
-    geom_col(width=0.9, fill="#120075")+
-    geom_text(aes(y=nbed+10, label=nbed)) +
+  ggplot(ts_quar_campus_tmp, aes(x=date, y=nbed)) +
+    geom_col(aes(fill=off_campus_fac))+
+    geom_label(aes(y=label_height+0.2*label_height/as.numeric(off_campus_fac), label=nbed, fill=off_campus_fac), fontface="bold", show.legend = FALSE) +
     theme_bw()+
-    scale_fill_brewer("",type = "qual") +
+    scale_fill_brewer("",palette = "Dark2") +
     scale_y_continuous(name = "", breaks=breaks_pretty()) +
     scale_x_date(name="", breaks="1 day", limits = xaxis_reporting) +
     theme(legend.position = "bottom", legend.title = element_blank()) +
     geom_hline(aes(yintercept=180), lty=2, col="red")
       
-  cap <- glue("**Figure C{fig_counter}**. Number in quarantine dorm (bed) by day, by location, for the reporting week.")
+  cap <- glue("**Figure C{fig_counter}**. Number in quarantine dorm (bed) by day, by residence location, for the reporting week.")
   fig_counter <- fig_counter + 1
 ```
 
@@ -1851,16 +1855,16 @@ $~$
 
   ## number isolation beds in use by day
  ggplot(ts_isol_campus %>% filter(campus_fac == "UNH Durham"), aes(x=date, y=nbed)) +
-    geom_col(width=0.9, fill="#120075")+
+    geom_col(aes(fill=off_campus_fac), width=0.9)+
     theme_bw()+
-    scale_fill_brewer("",type = "qual") +
+    scale_fill_brewer("",palette="Dark2") +
     scale_y_continuous(name = "", breaks=breaks_pretty()) +
     scale_x_date(name="", breaks="1 week", limits = xaxis_entire) +
     theme(legend.position = "bottom", legend.title = element_blank()) +
     geom_hline(aes(yintercept=59), lty=2, col="red") +
     theme(axis.text.x = element_text(angle=45, vjust = 1, hjust=1))
       
-  cap <- glue("**Figure C{fig_counter}**. Number in isolation dorm (bed) by day, by location, for the entire reporting period.")
+  cap <- glue("**Figure C{fig_counter}**. Number in isolation dorm (bed) by day, by residence location, for the entire reporting period.")
   fig_counter <- fig_counter + 1
   
 ```
@@ -1869,18 +1873,22 @@ $~$
 
 ```{r Figure-C12-IsolBeds-7day, fig.cap=cap}
 
+  ts_isol_campus_tmp <- ts_isol_campus %>% filter(campus_fac == "UNH Durham" & date > report_date_minus7 & date <= report_date)
+
+  label_height = max(c(ts_isol_campus_tmp$nbed, 59), na.rm=TRUE)
+  
   ## number isolation beds in use by day, past 7 days
- ggplot(ts_isol_campus %>% filter(campus_fac == "UNH Durham" & date > report_date_minus7 & date <= report_date), aes(x=date, y=nbed)) +
-    geom_col(width=0.9, fill="#120075")+
-    geom_text(aes(y=nbed+5, label=nbed)) +
+  ggplot(ts_isol_campus_tmp, aes(x=date, y=nbed)) +
+    geom_col(aes(fill=off_campus_fac), width=0.9)+
+    geom_label(aes(y=label_height+0.2*label_height/as.numeric(off_campus_fac), label=nbed, fill=off_campus_fac), fontface="bold", show.legend = FALSE) +
     theme_bw()+
-    scale_fill_brewer("",type = "qual") +
+    scale_fill_brewer("",palette = "Dark2") +
     scale_y_continuous(name = "", breaks=breaks_pretty()) +
     scale_x_date(name="", breaks="1 day", limits = xaxis_reporting) +
     theme(legend.position = "bottom", legend.title = element_blank()) +
     geom_hline(aes(yintercept=59), lty=2, col="red")
       
-  cap <- glue("**Figure C{fig_counter}**. Number in isolation dorm (bed) by day, by location, for the reporting week.")
+  cap <- glue("**Figure C{fig_counter}**. Number in isolation dorm (bed) by day, by residence location, for the reporting week.")
   fig_counter <- fig_counter + 1
   
 ```
