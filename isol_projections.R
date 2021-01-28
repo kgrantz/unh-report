@@ -73,12 +73,13 @@ ggplot(ts_quar_proj_tmp, aes(x=date, y=nbed)) +
   annotate("rect", alpha=0.3, xmin=report_date+0.5, xmax=report_date+8, ymin=-Inf, ymax=Inf)
 
 ## AS LINES
-ts_quar_proj_tmp <- ts_quar_proj %>%
+ts_quar_proj_tmp2 <- ts_quar_proj %>%
   filter(campus_fac == "UNH Durham") %>%
   group_by(campus_fac, date, scaling_fac_label) %>%
-  mutate(nbed = sum(nbed))
+  # mutate(nbed = sum(nbed))
+  summarize(nbed=sum(nbed))
 
-ggplot(ts_quar_proj_tmp, aes(x=date, y=nbed, group=scaling_fac_label, color=scaling_fac_label)) +
+ggplot(ts_quar_proj_tmp2, aes(x=date, y=nbed, group=scaling_fac_label, color=scaling_fac_label)) +
   geom_line(lwd=1.5)+
   theme_bw()+
   scale_color_brewer("",palette="Dark2") +
@@ -88,6 +89,33 @@ ggplot(ts_quar_proj_tmp, aes(x=date, y=nbed, group=scaling_fac_label, color=scal
   geom_hline(aes(yintercept=180), lty=2, col="red") +
   theme(axis.text.x = element_text(angle=45, vjust = 1, hjust=1)) +
   annotate("rect", alpha=0.1, xmin=report_date+0.5, xmax=report_date+8, ymin=-Inf, ymax=Inf)
+
+
+
+
+ts_quar_proj_tmp3 <- ts_quar_proj_tmp2 %>% mutate(off_campus_fac = "Total") %>%
+                      bind_rows(ts_quar_proj_tmp)  %>%
+                      mutate(new_lab=scaling_fac_label)
+ts_quar_proj_tmp3<- ts_quar_proj_tmp3 %>% mutate(new_lab="Actual") %>%
+                            filter(date<=report_date)%>%
+                              bind_rows(filter(ts_quar_proj_tmp3,date>=report_date))
+
+
+ggplot(ts_quar_proj_tmp3, aes(x=date, y=nbed, group=new_lab, col=new_lab)) +
+    geom_line()+
+    facet_wrap(.~off_campus_fac)+
+  theme_bw()+
+  scale_color_brewer("",palette="Dark2") +
+  # scale_linetype_manual(values = c(1,3,3,3))+
+  scale_y_continuous(name = "Quarantine Beds in Use", breaks=breaks_pretty()) +
+  scale_x_date(name="", breaks="3 days", limits = c(report_date_minus7, report_date+8)) +
+  theme(legend.position = "bottom", legend.title = element_blank()) +
+  geom_hline(aes(yintercept=180), lty=2,
+             col="red") +
+  theme(axis.text.x = element_text(angle=45, vjust = 1, hjust=1)) +
+  annotate("rect", alpha=0.1, xmin=report_date+0.5, xmax=report_date+8, ymin=-Inf, ymax=Inf)
+
+
 
 #### ------------ OLD ------------ ####
 ## Function that will output 
