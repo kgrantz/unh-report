@@ -1,4 +1,6 @@
 
+library(cowplot)
+
 ## Assuming you have gotten to the point of having `demo_quar` object:
 
 report_date <- as.Date("2020-11-09")
@@ -101,7 +103,7 @@ ts_quar_proj_tmp3<- ts_quar_proj_tmp3 %>% mutate(new_lab="Actual") %>%
                               bind_rows(filter(ts_quar_proj_tmp3,date>=report_date))
 
 
-ggplot(ts_quar_proj_tmp3, aes(x=date, y=nbed, group=new_lab, col=new_lab)) +
+p1 <- ggplot(ts_quar_proj_tmp3, aes(x=date, y=nbed, group=new_lab, col=new_lab)) +
     geom_line()+
     facet_wrap(.~off_campus_fac)+
   theme_bw()+
@@ -115,7 +117,122 @@ ggplot(ts_quar_proj_tmp3, aes(x=date, y=nbed, group=new_lab, col=new_lab)) +
   theme(axis.text.x = element_text(angle=45, vjust = 1, hjust=1)) +
   annotate("rect", alpha=0.1, xmin=report_date+0.5, xmax=report_date+8, ymin=-Inf, ymax=Inf)
 
+############### isolation
 
+
+new_entry <- demo_isol  %>%
+  filter(!is.na(iso_entrydate)) %>%
+  filter(quar_isol_bed==1) %>%
+  group_by(iso_entrydate, campus_fac, off_campus_fac) %>%
+  summarise(n = n()) %>%
+  ungroup() %>%
+  filter(iso_entrydate > report_date_minus7 & iso_entrydate <= report_date)
+
+new_entry <- expand_grid(new_entry, 
+                         scaling_factor = c(0.5, 1, 2)) %>%
+  rename(iso_entrydate_actual = iso_entrydate) %>%
+  # shift everything forward 7 days
+  mutate(iso_entrydate = iso_entrydate_actual + 7) %>%
+  # assign quarantine exit date
+  mutate(iso_exitdate = iso_entrydate + 13)
+
+new_entry_long <- new_entry %>%
+  # apply scaling factor
+  mutate(n = n*scaling_factor) %>%
+  rowwise() %>% 
+  do(data.frame(n = 1:.$n,
+                iso_entrydate = .$iso_entrydate,
+                iso_exitdate = .$iso_exitdate,
+                campus_fac = .$campus_fac,
+                off_campus_fac = .$off_campus_fac,
+                scaling_fac = .$scaling_factor)) %>%
+  do(data.frame(date = .$iso_entrydate:.$iso_exitdate,
+                campus_fac = .$campus_fac,
+                off_campus_fac = .$off_campus_fac,
+                scaling_fac = .$scaling_fac)) %>%
+  mutate(date = as.Date(date, origin="1970-01-01"))  
+
+
+# actual quarantine use for the next seven days
+to_add  <- ts_isol_campus %>%
+  expand_grid(scaling_fac = c(0.5, 1, 2))
+
+# projected quarantine use (adding in projected new entries)
+ts_isol_proj <- new_entry_long %>%
+  group_by(date, campus_fac, off_campus_fac, scaling_fac) %>%
+  summarize(nbed = n()) %>%
+  ungroup() %>%
+  # adding in actual use
+  bind_rows(to_add) %>%
+  group_by(date, campus_fac, off_campus_fac, scaling_fac) %>%
+  summarize(nbed = sum(nbed)) %>%
+  ungroup() %>%
+  mutate(scaling_fac_label = glue::glue("Scaling factor: {scaling_fac}"))
+
+ts_isol_proj_tmp <- ts_isol_proj %>%
+  filter(campus_fac == "UNH Durham") 
+ts_isol_proj_label <- ts_isol_proj_tmp %>%
+  filter(date > report_date)
+label_height = max(c(ts_isol_proj_tmp$nbed, 220), na.rm=TRUE)
+
+
+ggplot(ts_isol_proj_tmp, aes(x=date, y=nbed)) +
+  geom_col(aes(fill=off_campus_fac))+
+  theme_bw()+
+  scale_fill_brewer("",palette="Dark2") +
+  geom_label(data=ts_isol_proj_label, aes(y=label_height+0.2*label_height/as.numeric(off_campus_fac), label=nbed, fill=off_campus_fac), fontface="bold", show.legend = FALSE) +
+  scale_y_continuous(name = "", breaks=breaks_pretty()) +
+  scale_x_date(name="", breaks="3 days", limits = c(report_date_minus7, report_date+8)) +
+  theme(legend.position = "bottom", legend.title = element_blank()) +
+  geom_hline(aes(yintercept=180), lty=2, col="red") +
+  facet_grid(scaling_fac_label~.) +
+  theme(axis.text.x = element_text(angle=45, vjust = 1, hjust=1)) +
+  annotate("rect", alpha=0.3, xmin=report_date+0.5, xmax=report_date+8, ymin=-Inf, ymax=Inf)
+
+ts_isol_proj_tmp2 <- ts_isol_proj %>%
+  filter(campus_fac == "UNH Durham") %>%
+  group_by(campus_fac, date, scaling_fac_label) %>%
+  # mutate(nbed = sum(nbed))
+  summarize(nbed=sum(nbed))
+
+ggplot(ts_isol_proj_tmp2, aes(x=date, y=nbed, group=scaling_fac_label, color=scaling_fac_label)) +
+  geom_line(lwd=1.5)+
+  theme_bw()+
+  scale_color_brewer("",palette="Dark2") +
+  scale_y_continuous(name = "Isolation Beds in Use", breaks=breaks_pretty()) +
+  scale_x_date(name="", breaks="3 days", limits = c(report_date_minus7, report_date+8)) +
+  theme(legend.position = "bottom", legend.title = element_blank()) +
+  geom_hline(aes(yintercept=180), lty=2, col="red") +
+  theme(axis.text.x = element_text(angle=45, vjust = 1, hjust=1)) +
+  annotate("rect", alpha=0.1, xmin=report_date+0.5, xmax=report_date+8, ymin=-Inf, ymax=Inf)
+
+
+
+
+ts_isol_proj_tmp3 <- ts_isol_proj_tmp2 %>% mutate(off_campus_fac = "Total") %>%
+  bind_rows(ts_isol_proj_tmp)  %>%
+  mutate(new_lab=scaling_fac_label)
+ts_isol_proj_tmp3<- ts_isol_proj_tmp3 %>% mutate(new_lab="Actual") %>%
+  filter(date<=report_date)%>%
+  bind_rows(filter(ts_isol_proj_tmp3,date>=report_date))
+
+
+p2 <- ggplot(ts_isol_proj_tmp3, aes(x=date, y=nbed, group=new_lab, col=new_lab)) +
+  geom_line()+
+  facet_wrap(.~off_campus_fac)+
+  theme_bw()+
+  scale_color_brewer("",palette="Dark2") +
+  # scale_linetype_manual(values = c(1,3,3,3))+
+  scale_y_continuous(name = "Isolation Beds in Use", breaks=breaks_pretty()) +
+  scale_x_date(name="", breaks="3 days", limits = c(report_date_minus7, report_date+8)) +
+  theme(legend.position = "bottom", legend.title = element_blank()) +
+  geom_hline(aes(yintercept=217), lty=2,
+             col="red") +
+  theme(axis.text.x = element_text(angle=45, vjust = 1, hjust=1)) +
+  annotate("rect", alpha=0.1, xmin=report_date+0.5, xmax=report_date+8, ymin=-Inf, ymax=Inf)
+
+
+plot_grid(p1,p2,nrow = 2)
 
 #### ------------ OLD ------------ ####
 ## Function that will output 
