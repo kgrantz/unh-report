@@ -22,6 +22,8 @@ params:
   fig_counter <- 1
   tab_counter <- 1
 
+  quar_bed_limit <- 180
+  isol_bed_limit <- 59
   
   library(tidyverse)
   library(glue)
@@ -843,6 +845,150 @@ params:
                   st_crop(box)
 ```
 
+```{r isol-quar-projections}
+
+  ## QUARANTINE PROJECTIONS
+  # finding the number of individuals who entered quarantined (by on/off campus status)
+  # in the 7 days prior to report period
+  # then projecting those entries forward to act as 'new' entries in the 7 days
+  # after the report period
+  new_entry_quar <- demo_quar %>%
+                    filter(!is.na(quar_entrydate)) %>%
+                    filter(quar_isol_bed==1) %>%
+                    group_by(quar_entrydate, campus_fac, off_campus_fac) %>%
+                    summarise(n = n()) %>%
+                    ungroup() %>%
+                    filter(quar_entrydate > report_date_minus7 & quar_entrydate <= report_date) %>%
+                    expand_grid(.,
+                                scaling_factor = c(0.5, 1, 2)) %>%
+                    rename(quar_entrydate_actual = quar_entrydate) %>%
+                    # shift everything forward 7 days
+                    mutate(quar_entrydate = quar_entrydate_actual + 7) %>%
+                    # assign quarantine exit date
+                    mutate(quar_exitdate = quar_entrydate + 13)
+
+  new_entry_quar_long <- new_entry_quar %>%
+                         # apply scaling factor
+                         mutate(n = n*scaling_factor) %>%
+                         rowwise() %>% 
+                         do(data.frame(n = 1:.$n,
+                                       quar_entrydate = .$quar_entrydate,
+                                       quar_exitdate = .$quar_exitdate,
+                                       campus_fac = .$campus_fac,
+                                       off_campus_fac = .$off_campus_fac,
+                                       scaling_fac = .$scaling_factor)) %>%
+                         do(data.frame(date = .$quar_entrydate:.$quar_exitdate,
+                                       campus_fac = .$campus_fac,
+                                       off_campus_fac = .$off_campus_fac,
+                                       scaling_fac = .$scaling_fac)) %>%
+                         mutate(date = as.Date(date, origin="1970-01-01"))  
+
+  # actual quarantine use for the next seven days
+  to_add_quar  <- ts_quar_campus %>%
+                  expand_grid(scaling_fac = c(0.5, 1, 2))
+  
+  # projected quarantine use (adding in projected new entries with actual known use)
+  ts_quar_proj <- new_entry_quar_long %>%
+                  group_by(date, campus_fac, off_campus_fac, scaling_fac) %>%
+                  summarize(nbed = n()) %>%
+                  ungroup() %>%
+                  # adding in actual use
+                  bind_rows(to_add_quar) %>%
+                  group_by(date, campus_fac, off_campus_fac, scaling_fac) %>%
+                  summarize(nbed = sum(nbed)) %>%
+                  ungroup() %>%
+                  mutate(scaling_fac_label = glue::glue("Scaling factor: {scaling_fac}")) %>%
+                  filter(date >= report_date_minus7)
+
+  # formatting to add in 'total' categories
+  ts_quar_proj_final <- ts_quar_proj %>%
+                        # adding in total category
+                          group_by(campus_fac, date, scaling_fac_label) %>%
+                          summarize(nbed=sum(nbed)) %>%
+                          mutate(off_campus_fac = "Total") %>%
+                        # adding back on/off campus levels
+                        bind_rows(ts_quar_proj)
+  
+  # formatting to add in 'actual' categories
+  ts_quar_proj_final <- ts_quar_proj_final %>%
+                        filter(date <= report_date) %>%
+                        mutate(scaling_fac_label = "Actual") %>%
+                        distinct() %>%
+                        bind_rows(ts_quar_proj_final %>% filter(date >= report_date))
+
+  
+  ## ISOLATION PROJECTIONS
+  # finding the number of individuals who entered isolation (by on/off campus status)
+  # in the 7 days prior to report period
+  # then projecting those entries forward to act as 'new' entries in the 7 days
+  # after the report period
+  new_entry_isol <- demo_isol %>%
+                    filter(!is.na(iso_entrydate)) %>%
+                    filter(quar_isol_bed==1) %>%
+                    group_by(iso_entrydate, campus_fac, off_campus_fac) %>%
+                    summarise(n = n()) %>%
+                    ungroup() %>%
+                    filter(iso_entrydate > report_date_minus7 & iso_entrydate <= report_date) %>%
+                    expand_grid(.,
+                                scaling_factor = c(0.5, 1, 2)) %>%
+                    rename(iso_entrydate_actual = iso_entrydate) %>%
+                    # shift everything forward 7 days
+                    mutate(iso_entrydate = iso_entrydate_actual + 7) %>%
+                    # assign quarantine exit date
+                    mutate(iso_exitdate = iso_entrydate + 13)
+
+  new_entry_isol_long <- new_entry_isol %>%
+                         # apply scaling factor
+                         mutate(n = n*scaling_factor) %>%
+                         rowwise() %>% 
+                         do(data.frame(n = 1:.$n,
+                                       iso_entrydate = .$iso_entrydate,
+                                       iso_exitdate = .$iso_exitdate,
+                                       campus_fac = .$campus_fac,
+                                       off_campus_fac = .$off_campus_fac,
+                                       scaling_fac = .$scaling_factor)) %>%
+                         do(data.frame(date = .$iso_entrydate:.$iso_exitdate,
+                                       campus_fac = .$campus_fac,
+                                       off_campus_fac = .$off_campus_fac,
+                                       scaling_fac = .$scaling_fac)) %>%
+                         mutate(date = as.Date(date, origin="1970-01-01"))  
+
+  # actual quarantine use for the next seven days
+  to_add_isol  <- ts_isol_campus %>%
+                  expand_grid(scaling_fac = c(0.5, 1, 2))
+  
+  # projected quarantine use (adding in projected new entries with actual known use)
+  ts_isol_proj <- new_entry_isol_long %>%
+                  group_by(date, campus_fac, off_campus_fac, scaling_fac) %>%
+                  summarize(nbed = n()) %>%
+                  ungroup() %>%
+                  # adding in actual use
+                  bind_rows(to_add_isol) %>%
+                  group_by(date, campus_fac, off_campus_fac, scaling_fac) %>%
+                  summarize(nbed = sum(nbed)) %>%
+                  ungroup() %>%
+                  mutate(scaling_fac_label = glue::glue("Scaling factor: {scaling_fac}")) %>%
+                  filter(date >= report_date_minus7)
+
+  # formatting to add in 'total' categories
+  ts_isol_proj_final <- ts_isol_proj %>%
+                        # adding in total category
+                          group_by(campus_fac, date, scaling_fac_label) %>%
+                          summarize(nbed=sum(nbed)) %>%
+                          mutate(off_campus_fac = "Total") %>%
+                        # adding back on/off campus levels
+                        bind_rows(ts_isol_proj)
+  
+  # formatting to add in 'actual' categories
+  ts_isol_proj_final <- ts_isol_proj_final %>%
+                        filter(date <= report_date) %>%
+                        mutate(scaling_fac_label = "Actual") %>%
+                        distinct() %>%
+                        bind_rows(ts_isol_proj_final %>% filter(date >= report_date))
+  
+```
+
+
 ## `r glue("UNH SURVEILLANCE REPORT: {report_date}")`
 
 Start: `r start_date_str_long`
@@ -973,7 +1119,7 @@ Data reported as of: `r format(Sys.Date(), "%B %d, %Y")`
                       NAvgIsolBed = mean(nbed, na.rm=TRUE)) %>%
             replace_na(list(NAvgIsol = 0,
                             NAvgIsolBed = 0)) %>%
-            mutate(NAvgIsolBedPct = NAvgIsolBed / 59) %>%
+            mutate(NAvgIsolBedPct = NAvgIsolBed / isol_bed_limit) %>%
             mutate(NAvgIsol = round(NAvgIsol, 1)) %>%
             mutate(NAvgIsolBedLabel = ifelse(campus_fac=="UNH Durham", 
                                              glue("{round(NAvgIsolBed, 1)} ({round(NAvgIsolBedPct*100, 1)}%)"),
@@ -989,7 +1135,7 @@ Data reported as of: `r format(Sys.Date(), "%B %d, %Y")`
                       NAvgQuarBed = mean(nbed, na.rm=TRUE)) %>%
             replace_na(list(NAvgQuar = 0,
                             NAvgQuarBed = 0)) %>%
-            mutate(NAvgQuarBedPct = NAvgQuarBed / 180) %>%
+            mutate(NAvgQuarBedPct = NAvgQuarBed / quar_bed_limit) %>%
             mutate(NAvgQuar = round(NAvgQuar, 1)) %>%
             mutate(NAvgQuarBedLabel = ifelse(campus_fac=="UNH Durham",
                                              glue("{round(NAvgQuarBed, 1)} ({round(NAvgQuarBedPct*100, 1)}%)"),
@@ -1775,7 +1921,7 @@ $~$
     scale_y_continuous(name = "", breaks=breaks_pretty()) +
     scale_x_date(name="", breaks="1 week", limits = xaxis_entire) +
     theme(legend.position = "bottom", legend.title = element_blank()) +
-    geom_hline(aes(yintercept=180), lty=2, col="red") +
+    geom_hline(aes(yintercept=quar_bed_limit), lty=2, col="red") +
     theme(axis.text.x = element_text(angle=45, vjust = 1, hjust=1))
       
   cap <- glue("**Figure C{fig_counter}**. Number in quarantine dorm (bed) by day, by residence location, for the entire reporting period.")
@@ -1789,7 +1935,7 @@ $~$
 
   ts_quar_campus_tmp <- ts_quar_campus %>% filter(campus_fac == "UNH Durham" & date > report_date_minus7 & date <= report_date)
 
-  label_height = max(c(ts_quar_campus_tmp$nbed, 180), na.rm=TRUE)
+  label_height = max(c(ts_quar_campus_tmp$nbed, quar_bed_limit), na.rm=TRUE)
   
   ## number quarantine beds in use by day, past 7 days
   ggplot(ts_quar_campus_tmp, aes(x=date, y=nbed)) +
@@ -1800,11 +1946,33 @@ $~$
     scale_y_continuous(name = "", breaks=breaks_pretty()) +
     scale_x_date(name="", breaks="1 day", limits = xaxis_reporting) +
     theme(legend.position = "bottom", legend.title = element_blank()) +
-    geom_hline(aes(yintercept=180), lty=2, col="red")
+    geom_hline(aes(yintercept=quar_bed_limit), lty=2, col="red")
       
   cap <- glue("**Figure C{fig_counter}**. Number in quarantine dorm (bed) by day, by residence location, for the reporting week.")
   fig_counter <- fig_counter + 1
 ```
+
+$~$
+
+```{r Figure-C8B-Quar-Proj, fig.cap=cap}
+
+  ggplot(ts_quar_proj_final %>% filter(campus_fac=="UNH Durham"), aes(x=date, y=nbed, group=scaling_fac_label, col=scaling_fac_label)) +
+    geom_line(lwd=1.15)+
+    facet_wrap(.~off_campus_fac)+
+    theme_bw()+
+    scale_color_brewer("",palette="Dark2") +
+    scale_y_continuous(name = "Quarantine Beds in Use", breaks=breaks_pretty()) +
+    scale_x_date(name="", breaks="3 days", limits = c(report_date_minus7, report_date+8)) +
+    theme(legend.position = "bottom", legend.title = element_blank()) +
+    geom_hline(aes(yintercept=quar_bed_limit), lty=2, col="red") +
+    theme(axis.text.x = element_text(angle=45, vjust = 1, hjust=1)) +
+    annotate("rect", alpha=0.1, xmin=report_date, xmax=report_date+8, ymin=-Inf, ymax=Inf)
+
+  cap <- glue("**Figure C{fig_counter}**. Projected number in quarantine dorm (bed) by day, by residence location, under the assumption that 0.5x, 1x, or 2x the amount of observed admissions into quarantine over the reporting period enter isolation in the next 7 days.")
+  fig_counter <- fig_counter + 1
+  
+```
+
 
 $~$
 
@@ -1861,7 +2029,7 @@ $~$
     scale_y_continuous(name = "", breaks=breaks_pretty()) +
     scale_x_date(name="", breaks="1 week", limits = xaxis_entire) +
     theme(legend.position = "bottom", legend.title = element_blank()) +
-    geom_hline(aes(yintercept=59), lty=2, col="red") +
+    geom_hline(aes(yintercept=isol_bed_limit), lty=2, col="red") +
     theme(axis.text.x = element_text(angle=45, vjust = 1, hjust=1))
       
   cap <- glue("**Figure C{fig_counter}**. Number in isolation dorm (bed) by day, by residence location, for the entire reporting period.")
@@ -1875,7 +2043,7 @@ $~$
 
   ts_isol_campus_tmp <- ts_isol_campus %>% filter(campus_fac == "UNH Durham" & date > report_date_minus7 & date <= report_date)
 
-  label_height = max(c(ts_isol_campus_tmp$nbed, 59), na.rm=TRUE)
+  label_height = max(c(ts_isol_campus_tmp$nbed, isol_bed_limit), na.rm=TRUE)
   
   ## number isolation beds in use by day, past 7 days
   ggplot(ts_isol_campus_tmp, aes(x=date, y=nbed)) +
@@ -1886,9 +2054,31 @@ $~$
     scale_y_continuous(name = "", breaks=breaks_pretty()) +
     scale_x_date(name="", breaks="1 day", limits = xaxis_reporting) +
     theme(legend.position = "bottom", legend.title = element_blank()) +
-    geom_hline(aes(yintercept=59), lty=2, col="red")
+    geom_hline(aes(yintercept=isol_bed_limit), lty=2, col="red")
       
   cap <- glue("**Figure C{fig_counter}**. Number in isolation dorm (bed) by day, by residence location, for the reporting week.")
+  fig_counter <- fig_counter + 1
+  
+```
+
+$~$
+
+```{r Figure-C12B-Isol-Proj, fig.cap=cap}
+
+  ggplot(ts_isol_proj_final %>% filter(campus_fac=="UNH Durham"), aes(x=date, y=nbed, group=scaling_fac_label, col=scaling_fac_label)) +
+    geom_line(lwd=1.15)+
+    facet_wrap(.~off_campus_fac)+
+    theme_bw()+
+    scale_color_brewer("",palette="Dark2") +
+    scale_y_continuous(name = "Isolation Beds in Use", breaks=breaks_pretty()) +
+    scale_x_date(name="", breaks="3 days", limits = c(report_date_minus7, report_date+8)) +
+    theme(legend.position = "bottom", legend.title = element_blank()) +
+    geom_hline(aes(yintercept=isol_bed_limit), lty=2, col="red") +
+    theme(axis.text.x = element_text(angle=45, vjust = 1, hjust=1)) +
+    annotate("rect", alpha=0.1, xmin=report_date, xmax=report_date+8, ymin=-Inf, ymax=Inf)
+
+  cap <- glue("**Figure C{fig_counter}**. Projected number in isolation dorm (bed) by day, by residence location, under the assumption that 0.5x, 1x, or 2x the amount of observed admissions into isolation over the reporting period enter isolation in the next 7 days.")
+
   fig_counter <- fig_counter + 1
   
 ```
