@@ -23,7 +23,7 @@ params:
   tab_counter <- 1
 
   quar_bed_limit <- 180
-  isol_bed_limit <- 59
+  isol_bed_limit <- 217
   
   library(tidyverse)
   library(glue)
