@@ -717,6 +717,20 @@ params:
                        mutate(active_cases = rollsum(n)) %>%
                        ungroup()
   
+  # data frame: active cases by day, by campus, by dorm for students only
+  # note: this is not currently used anywhere, but may be needed for automated text triggers
+  ts_active_dorm <- cases %>%
+                    filter(user_status_fac=="Student") %>%
+                    group_by(testdate, campus_fac, dorm) %>%
+                    summarize(n = n()) %>%
+                    ungroup() %>%
+                    group_by(campus_fac, dorm) %>%
+                    complete(testdate = as.Date(as.Date("2020-07-15"):report_date, origin="1970-01-01")) %>%
+                    replace_na(list(n=0)) %>%
+                    arrange(testdate) %>%
+                    mutate(active_cases = rollsum(n)) %>%
+                    ungroup()
+    
   ## data frame: number pos, neg, incon, invalid, pos+neg, by campus, role, testdate
   ts_test_res <- demo_testing %>%
                  mutate(test = 1) %>%
