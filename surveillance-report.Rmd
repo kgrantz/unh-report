@@ -901,33 +901,60 @@ params:
   to_add_quar  <- ts_quar_campus %>%
                   expand_grid(scaling_fac = c(0.5, 1, 2))
   
+  # adding in total
+  to_add_quar <- to_add_quar %>%
+    group_by(campus_fac, date, scaling_fac) %>%
+    summarize(nbed=sum(nbed)) %>%
+    mutate(off_campus_fac = "Total") %>%
+    bind_rows(to_add_quar) %>%
+    mutate(scaling_fac = glue::glue("{scaling_fac}"))
+  
+  # adding in total with 2x scaling factor, without off-campus
+  to_add_quar <- to_add_quar %>%
+      filter(off_campus_fac=="Total" & scaling_fac==2) %>%
+      mutate(scaling_fac = "2 w/o off-campus") %>%
+      bind_rows(to_add_quar) 
+  
   # projected quarantine use (adding in projected new entries with actual known use)
   ts_quar_proj <- new_entry_quar_long %>%
-                  group_by(date, campus_fac, off_campus_fac, scaling_fac) %>%
-                  summarize(nbed = n()) %>%
-                  ungroup() %>%
-                  # adding in actual use
-                  bind_rows(to_add_quar) %>%
-                  group_by(date, campus_fac, off_campus_fac, scaling_fac) %>%
-                  summarize(nbed = sum(nbed)) %>%
-                  ungroup() %>%
-                  mutate(scaling_fac_label = glue::glue("Scaling factor: {scaling_fac}")) %>%
-                  filter(date >= report_date_minus7)
-
-  # formatting to add in 'total' categories
+    group_by(date, campus_fac, off_campus_fac, scaling_fac) %>%
+    summarize(nbed = n()) %>%
+    ungroup() %>%
+    mutate(scaling_fac = glue::glue("{scaling_fac}"))
+  
+  # formatting to add in 'total' + 'total w/o off-campus' categories
+  ts_quar_proj <- ts_quar_proj %>%
+    group_by(campus_fac, date, scaling_fac) %>%
+    summarize(nbed=sum(nbed)) %>%
+    mutate(off_campus_fac = "Total") %>%
+    bind_rows(ts_quar_proj)
+  
+  ts_quar_proj <- ts_quar_proj %>%
+        filter(off_campus_fac=="On Campus" & scaling_fac==2) %>%
+        mutate(off_campus_fac="Total") %>%
+        mutate(scaling_fac = "2 w/o off-campus") %>%
+        bind_rows(ts_quar_proj)
+  
   ts_quar_proj_final <- ts_quar_proj %>%
-                        # adding in total category
-                          group_by(campus_fac, date, scaling_fac_label) %>%
-                          summarize(nbed=sum(nbed)) %>%
-                          mutate(off_campus_fac = "Total") %>%
-                        # adding back on/off campus levels
-                        bind_rows(ts_quar_proj)
+      bind_rows(to_add_quar) %>%
+      group_by(date, campus_fac, off_campus_fac, scaling_fac) %>%
+      summarize(nbed=sum(nbed)) %>%
+      filter(date >= report_date_minus7)
   
   # formatting to add in 'actual' categories
-  ts_quar_proj_final <- ts_quar_proj_final %>%
-                        filter(date <= report_date) %>%
-                        mutate(scaling_fac_label = "Actual") %>%
-                        distinct() %>%
+  ts_quar_actual <- ts_quar_campus %>%
+                    filter(date >= report_date_minus7 & date <= report_date) %>%
+                    select(-n) %>%
+                    mutate(scaling_fac = "Actual") %>%
+                    distinct() 
+
+  ts_quar_actual <- ts_quar_actual %>%
+                    group_by(date, campus_fac, scaling_fac) %>%
+                    summarise(nbed = sum(nbed)) %>%
+                    mutate(off_campus_fac="Total") %>%
+                    bind_rows(ts_quar_actual) 
+  
+  ts_quar_proj_final <- ts_quar_actual %>%
                         bind_rows(ts_quar_proj_final %>% filter(date >= report_date))
 
   
@@ -971,34 +998,61 @@ params:
   to_add_isol  <- ts_isol_campus %>%
                   expand_grid(scaling_fac = c(0.5, 1, 2))
   
+  # adding in total
+  to_add_isol <- to_add_isol %>%
+                 group_by(campus_fac, date, scaling_fac) %>%
+                 summarize(nbed=sum(nbed)) %>%
+                 mutate(off_campus_fac = "Total") %>%
+                 bind_rows(to_add_isol) %>%
+                 mutate(scaling_fac = glue::glue("{scaling_fac}"))
+  
+  # adding in total with 2x scaling factor, without off-campus
+  to_add_isol <- to_add_isol %>%
+                 filter(off_campus_fac=="Total" & scaling_fac==2) %>%
+                 mutate(scaling_fac = "2 w/o off-campus") %>%
+                 bind_rows(to_add_isol) 
+  
   # projected quarantine use (adding in projected new entries with actual known use)
   ts_isol_proj <- new_entry_isol_long %>%
                   group_by(date, campus_fac, off_campus_fac, scaling_fac) %>%
                   summarize(nbed = n()) %>%
                   ungroup() %>%
-                  # adding in actual use
-                  bind_rows(to_add_isol) %>%
-                  group_by(date, campus_fac, off_campus_fac, scaling_fac) %>%
-                  summarize(nbed = sum(nbed)) %>%
-                  ungroup() %>%
-                  mutate(scaling_fac_label = glue::glue("Scaling factor: {scaling_fac}")) %>%
-                  filter(date >= report_date_minus7)
-
-  # formatting to add in 'total' categories
+                  mutate(scaling_fac = glue::glue("{scaling_fac}"))
+  
+  # formatting to add in 'total' + 'total w/o off-campus' categories
+  ts_isol_proj <- ts_isol_proj %>%
+                  group_by(campus_fac, date, scaling_fac) %>%
+                  summarize(nbed=sum(nbed)) %>%
+                  mutate(off_campus_fac = "Total") %>%
+                  bind_rows(ts_isol_proj)
+  
+  ts_isol_proj <- ts_isol_proj %>%
+                  filter(off_campus_fac=="On Campus" & scaling_fac==2) %>%
+                  mutate(off_campus_fac="Total") %>%
+                  mutate(scaling_fac = "2 w/o off-campus") %>%
+                  bind_rows(ts_isol_proj)
+  
   ts_isol_proj_final <- ts_isol_proj %>%
-                        # adding in total category
-                          group_by(campus_fac, date, scaling_fac_label) %>%
-                          summarize(nbed=sum(nbed)) %>%
-                          mutate(off_campus_fac = "Total") %>%
-                        # adding back on/off campus levels
-                        bind_rows(ts_isol_proj)
+                        bind_rows(to_add_isol) %>%
+                        group_by(date, campus_fac, off_campus_fac, scaling_fac) %>%
+                        summarize(nbed=sum(nbed)) %>%
+                        filter(date >= report_date_minus7)
   
   # formatting to add in 'actual' categories
-  ts_isol_proj_final <- ts_isol_proj_final %>%
-                        filter(date <= report_date) %>%
-                        mutate(scaling_fac_label = "Actual") %>%
-                        distinct() %>%
+  ts_isol_actual <- ts_isol_campus %>%
+                    filter(date >= report_date_minus7 & date <= report_date) %>%
+                    select(-n) %>%
+                    mutate(scaling_fac = "Actual") %>%
+                    distinct() 
+  ts_isol_actual <- ts_isol_actual %>%
+                    group_by(date, campus_fac, scaling_fac) %>%
+                    summarise(nbed = sum(nbed)) %>%
+                    mutate(off_campus_fac="Total") %>%
+                    bind_rows(ts_isol_actual) 
+  
+  ts_isol_proj_final <- ts_isol_actual %>%
                         bind_rows(ts_isol_proj_final %>% filter(date >= report_date))
+  
   
 ```
 
@@ -1970,11 +2024,17 @@ $~$
 
 ```{r Figure-C8B-Quar-Proj, fig.cap=cap}
 
-  ggplot(ts_quar_proj_final %>% filter(campus_fac=="UNH Durham"), aes(x=date, y=nbed, group=scaling_fac_label, col=scaling_fac_label)) +
+  ts_quar_proj_tmp <- ts_quar_proj_final %>%
+                      filter(campus_fac == "UNH Durham") %>%
+                      mutate(scaling_fac_lab = factor(scaling_fac,
+                                                      levels = c("0.5", "1", "2 w/o off-campus", "2", "Actual"))) %>%
+                      filter(date >= report_date_minus7 & date <= report_date + 8)
+
+  ggplot(ts_quar_proj_tmp, aes(x=date, y=nbed, group=scaling_fac_lab, col=scaling_fac_lab)) +
     geom_line(lwd=1.15)+
     facet_wrap(.~off_campus_fac)+
     theme_bw()+
-    scale_color_brewer("",palette="Dark2") +
+    scale_color_manual(name="", values=c("#1B9E77", "#D95F02", "#7570B3", "#E7298A", "black")) +
     scale_y_continuous(name = "Quarantine Beds in Use", breaks=breaks_pretty()) +
     scale_x_date(name="", breaks="3 days", limits = c(report_date_minus7, report_date+8)) +
     theme(legend.position = "bottom", legend.title = element_blank()) +
@@ -1982,7 +2042,8 @@ $~$
     theme(axis.text.x = element_text(angle=45, vjust = 1, hjust=1)) +
     annotate("rect", alpha=0.1, xmin=report_date, xmax=report_date+8, ymin=-Inf, ymax=Inf)
 
-  cap <- glue("**Figure C{fig_counter}**. Projected number in quarantine dorm (bed) by day, by residence location, under the assumption that 0.5x, 1x, or 2x the amount of observed admissions into quarantine over the reporting period enter isolation in the next 7 days.")
+  cap <- glue("**Figure C{fig_counter}**. Projected number in quarantine dorm (bed) by day, by typical residence location, under the assumption that 0.5x, 1x, or 2x the amount of observed admissions into quarantine over the reporting period enter isolation in the next 7 days. We also present a scenario in which 2x the number of observed admissions among on-campus students occur in the next 7 days, but there are no off-campus students admitted.")
+  
   fig_counter <- fig_counter + 1
   
 ```
@@ -2079,11 +2140,17 @@ $~$
 
 ```{r Figure-C12B-Isol-Proj, fig.cap=cap}
 
-  ggplot(ts_isol_proj_final %>% filter(campus_fac=="UNH Durham"), aes(x=date, y=nbed, group=scaling_fac_label, col=scaling_fac_label)) +
+  ts_isol_proj_tmp <- ts_isol_proj_final %>%
+                      filter(campus_fac == "UNH Durham") %>%
+                      mutate(scaling_fac_lab = factor(scaling_fac,
+                                                      levels = c("0.5", "1", "2 w/o off-campus", "2", "Actual"))) %>%
+                      filter(date >= report_date_minus7 & date <= report_date + 8)
+
+  ggplot(ts_isol_proj_tmp, aes(x=date, y=nbed, group=scaling_fac_lab, col=scaling_fac_lab)) +
     geom_line(lwd=1.15)+
     facet_wrap(.~off_campus_fac)+
     theme_bw()+
-    scale_color_brewer("",palette="Dark2") +
+    scale_color_manual(name="", values=c("#1B9E77", "#D95F02", "#7570B3", "#E7298A", "black")) +
     scale_y_continuous(name = "Isolation Beds in Use", breaks=breaks_pretty()) +
     scale_x_date(name="", breaks="3 days", limits = c(report_date_minus7, report_date+8)) +
     theme(legend.position = "bottom", legend.title = element_blank()) +
@@ -2091,7 +2158,7 @@ $~$
     theme(axis.text.x = element_text(angle=45, vjust = 1, hjust=1)) +
     annotate("rect", alpha=0.1, xmin=report_date, xmax=report_date+8, ymin=-Inf, ymax=Inf)
 
-  cap <- glue("**Figure C{fig_counter}**. Projected number in isolation dorm (bed) by day, by residence location, under the assumption that 0.5x, 1x, or 2x the amount of observed admissions into isolation over the reporting period enter isolation in the next 7 days.")
+  cap <- glue("**Figure C{fig_counter}**. Projected number in isolation dorm (bed) by day, by typical residence location, under the assumption that 0.5x, 1x, or 2x the amount of observed admissions into isolation over the reporting period enter isolation in the next 7 days. We also present a scenario in which 2x the number of observed admissions among on-campus students occur in the next 7 days, but there are no off-campus students admitted.")
 
   fig_counter <- fig_counter + 1
   
