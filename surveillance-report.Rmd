@@ -1050,12 +1050,12 @@ Data reported as of: `r format(Sys.Date(), "%B %d, %Y")`
                                   "Current COVID-19 hospitalizations",
                                   "Most strict restrictions"),
                           val = c(state_curr_cases, state_curr_hosp, state_curr_cond),
-                          level = c(pick_color_threshold_str(state_curr_cases, thresholds=c(0, 100, 1200, 1800)),
-                                    pick_color_threshold_str(state_curr_hosp, thresholds = c(0, 25, 50, 100)),
+                          level = c(pick_color_threshold_str(state_curr_cases, thresholds=c(0, 100, 3000, 6000)),
+                                    pick_color_threshold_str(state_curr_hosp, thresholds = c(0, 25, 200, 400)),
                                     "link"))
   
-  cell_cols <- c(pick_color_threshold(state_curr_cases, thresholds=c(0, 100, 1200, 1800)),
-                 pick_color_threshold(state_curr_hosp, thresholds = c(0, 25, 50, 100)),
+  cell_cols <- c(pick_color_threshold(state_curr_cases, thresholds=c(0, 100, 3000, 6000)),
+                 pick_color_threshold(state_curr_hosp, thresholds = c(0, 25, 200, 400)),
                  "#FFFFFF")
   state_tab %>%
     flextable() %>%
@@ -1187,7 +1187,7 @@ Data reported as of: `r format(Sys.Date(), "%B %d, %Y")`
   active_case_colors <- indicatordf %>%
                         filter(Indicator == "Active Cases") %>%
                         select(-Indicator) %>%
-                        mutate_all(function(x){pick_color_threshold(as.numeric(x), thresholds=c(-1, 20, 100, 200))}) %>%
+                        mutate_all(function(x){pick_color_threshold(as.numeric(x), thresholds=c(-1, 20, 150, 300))}) %>%
                         unlist()
 
   pct_pos_colors <- posdf %>%
