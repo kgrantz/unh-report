@@ -524,10 +524,10 @@ params:
   
   
   ## create long quarantine dataset (1 row per ID, per day in quarantine)
-  ## TO DO: this imputes any missing exit dates with the entry date + 14
+  ## TO DO: this imputes any missing exit dates with the entry date + 10
   demo_quar_long <- demo_quar %>%
                     mutate(quar_exitdate = ifelse(is.na(quar_exitdate) & !is.na(quar_entrydate),
-                                                        quar_entrydate + 14,
+                                                        quar_entrydate + 10,
                                                         quar_exitdate)) %>%
                     mutate(quar_exitdate = as.Date(quar_exitdate, origin="1970-01-01")) %>%
                     rowwise() %>% 
@@ -879,7 +879,7 @@ params:
                     # shift everything forward 7 days
                     mutate(quar_entrydate = quar_entrydate_actual + 7) %>%
                     # assign quarantine exit date
-                    mutate(quar_exitdate = quar_entrydate + 13)
+                    mutate(quar_exitdate = quar_entrydate + 10)
 
   new_entry_quar_long <- new_entry_quar %>%
                          # apply scaling factor
