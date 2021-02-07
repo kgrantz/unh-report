@@ -10,7 +10,7 @@ params:
   show_cleaning: FALSE # whether to print out basic info about data cleaning steps
   concord: TRUE #indicate whether to run extra graphics for concord
   manchester: TRUE #indicate whether to run extra graphics for manchester
-  report_date: "AUTO" # if "AUTO", takes Sys.Date()-2; otherwise specify as YYYY-MM-DD
+  report_date: "2021-02-03" # if "AUTO", takes Sys.Date()-2; otherwise specify as YYYY-MM-DD
   state_conditions: "Limited Open"
 ---
 
@@ -874,7 +874,7 @@ params:
                     ungroup() %>%
                     filter(quar_entrydate > report_date_minus7 & quar_entrydate <= report_date) %>%
                     expand_grid(.,
-                                scaling_factor = c(0.5, 1, 2)) %>%
+                                scaling_factor = c(0.5, 1, 4)) %>%
                     rename(quar_entrydate_actual = quar_entrydate) %>%
                     # shift everything forward 7 days
                     mutate(quar_entrydate = quar_entrydate_actual + 7) %>%
@@ -899,7 +899,7 @@ params:
 
   # actual quarantine use for the next seven days
   to_add_quar  <- ts_quar_campus %>%
-                  expand_grid(scaling_fac = c(0.5, 1, 2))
+                  expand_grid(scaling_fac = c(0.5, 1, 4))
   
   # adding in total
   to_add_quar <- to_add_quar %>%
@@ -909,10 +909,10 @@ params:
     bind_rows(to_add_quar) %>%
     mutate(scaling_fac = glue::glue("{scaling_fac}"))
   
-  # adding in total with 2x scaling factor, without off-campus
+  # adding in total with 4x scaling factor, without off-campus
   to_add_quar <- to_add_quar %>%
-      filter(off_campus_fac=="Total" & scaling_fac==2) %>%
-      mutate(scaling_fac = "2 w/o off-campus") %>%
+      filter(off_campus_fac=="Total" & scaling_fac==4) %>%
+      mutate(scaling_fac = "4 w/o off-campus") %>%
       bind_rows(to_add_quar) 
   
   # projected quarantine use (adding in projected new entries with actual known use)
@@ -930,9 +930,9 @@ params:
     bind_rows(ts_quar_proj)
   
   ts_quar_proj <- ts_quar_proj %>%
-        filter(off_campus_fac=="On Campus" & scaling_fac==2) %>%
+        filter(off_campus_fac=="On Campus" & scaling_fac==4) %>%
         mutate(off_campus_fac="Total") %>%
-        mutate(scaling_fac = "2 w/o off-campus") %>%
+        mutate(scaling_fac = "4 w/o off-campus") %>%
         bind_rows(ts_quar_proj)
   
   ts_quar_proj_final <- ts_quar_proj %>%
@@ -971,7 +971,7 @@ params:
                     ungroup() %>%
                     filter(iso_entrydate > report_date_minus7 & iso_entrydate <= report_date) %>%
                     expand_grid(.,
-                                scaling_factor = c(0.5, 1, 2)) %>%
+                                scaling_factor = c(0.5, 1, 4)) %>%
                     rename(iso_entrydate_actual = iso_entrydate) %>%
                     # shift everything forward 7 days
                     mutate(iso_entrydate = iso_entrydate_actual + 7) %>%
@@ -996,7 +996,7 @@ params:
 
   # actual quarantine use for the next seven days
   to_add_isol  <- ts_isol_campus %>%
-                  expand_grid(scaling_fac = c(0.5, 1, 2))
+                  expand_grid(scaling_fac = c(0.5, 1, 4))
   
   # adding in total
   to_add_isol <- to_add_isol %>%
@@ -1006,10 +1006,10 @@ params:
                  bind_rows(to_add_isol) %>%
                  mutate(scaling_fac = glue::glue("{scaling_fac}"))
   
-  # adding in total with 2x scaling factor, without off-campus
+  # adding in total with 4x scaling factor, without off-campus
   to_add_isol <- to_add_isol %>%
-                 filter(off_campus_fac=="Total" & scaling_fac==2) %>%
-                 mutate(scaling_fac = "2 w/o off-campus") %>%
+                 filter(off_campus_fac=="Total" & scaling_fac==4) %>%
+                 mutate(scaling_fac = "4 w/o off-campus") %>%
                  bind_rows(to_add_isol) 
   
   # projected quarantine use (adding in projected new entries with actual known use)
@@ -1027,9 +1027,9 @@ params:
                   bind_rows(ts_isol_proj)
   
   ts_isol_proj <- ts_isol_proj %>%
-                  filter(off_campus_fac=="On Campus" & scaling_fac==2) %>%
+                  filter(off_campus_fac=="On Campus" & scaling_fac==4) %>%
                   mutate(off_campus_fac="Total") %>%
-                  mutate(scaling_fac = "2 w/o off-campus") %>%
+                  mutate(scaling_fac = "4 w/o off-campus") %>%
                   bind_rows(ts_isol_proj)
   
   ts_isol_proj_final <- ts_isol_proj %>%
@@ -2027,7 +2027,7 @@ $~$
   ts_quar_proj_tmp <- ts_quar_proj_final %>%
                       filter(campus_fac == "UNH Durham") %>%
                       mutate(scaling_fac_lab = factor(scaling_fac,
-                                                      levels = c("0.5", "1", "2 w/o off-campus", "2", "Actual"))) %>%
+                                                      levels = c("0.5", "1", "4 w/o off-campus", "4", "Actual"))) %>%
                       filter(date >= report_date_minus7 & date <= report_date + 8)
 
   ggplot(ts_quar_proj_tmp, aes(x=date, y=nbed, group=scaling_fac_lab, col=scaling_fac_lab)) +
@@ -2042,7 +2042,7 @@ $~$
     theme(axis.text.x = element_text(angle=45, vjust = 1, hjust=1)) +
     annotate("rect", alpha=0.1, xmin=report_date, xmax=report_date+8, ymin=-Inf, ymax=Inf)
 
-  cap <- glue("**Figure C{fig_counter}**. Projected number in quarantine dorm (bed) by day, by typical residence location, under the assumption that 0.5x, 1x, or 2x the amount of observed admissions into quarantine over the reporting period enter isolation in the next 7 days. We also present a scenario in which 2x the number of observed admissions among on-campus students occur in the next 7 days, but there are no off-campus students admitted.")
+  cap <- glue("**Figure C{fig_counter}**. Projected number in quarantine dorm (bed) by day, by typical residence location, under the assumption that 0.5x, 1x, or 4x the amount of observed admissions into quarantine over the reporting period enter isolation in the next 7 days. We also present a scenario in which 4x the number of observed admissions among on-campus students occur in the next 7 days, but there are no off-campus students admitted.")
   
   fig_counter <- fig_counter + 1
   
@@ -2143,7 +2143,7 @@ $~$
   ts_isol_proj_tmp <- ts_isol_proj_final %>%
                       filter(campus_fac == "UNH Durham") %>%
                       mutate(scaling_fac_lab = factor(scaling_fac,
-                                                      levels = c("0.5", "1", "2 w/o off-campus", "2", "Actual"))) %>%
+                                                      levels = c("0.5", "1", "4 w/o off-campus", "4", "Actual"))) %>%
                       filter(date >= report_date_minus7 & date <= report_date + 8)
 
   ggplot(ts_isol_proj_tmp, aes(x=date, y=nbed, group=scaling_fac_lab, col=scaling_fac_lab)) +
@@ -2158,7 +2158,7 @@ $~$
     theme(axis.text.x = element_text(angle=45, vjust = 1, hjust=1)) +
     annotate("rect", alpha=0.1, xmin=report_date, xmax=report_date+8, ymin=-Inf, ymax=Inf)
 
-  cap <- glue("**Figure C{fig_counter}**. Projected number in isolation dorm (bed) by day, by typical residence location, under the assumption that 0.5x, 1x, or 2x the amount of observed admissions into isolation over the reporting period enter isolation in the next 7 days. We also present a scenario in which 2x the number of observed admissions among on-campus students occur in the next 7 days, but there are no off-campus students admitted.")
+  cap <- glue("**Figure C{fig_counter}**. Projected number in isolation dorm (bed) by day, by typical residence location, under the assumption that 0.5x, 1x, or 4x the amount of observed admissions into isolation over the reporting period enter isolation in the next 7 days. We also present a scenario in which 4x the number of observed admissions among on-campus students occur in the next 7 days, but there are no off-campus students admitted.")
 
   fig_counter <- fig_counter + 1
   
