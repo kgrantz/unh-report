@@ -10,7 +10,7 @@ params:
   show_cleaning: FALSE # whether to print out basic info about data cleaning steps
   concord: TRUE #indicate whether to run extra graphics for concord
   manchester: TRUE #indicate whether to run extra graphics for manchester
-  report_date: "2021-02-03" # if "AUTO", takes Sys.Date()-2; otherwise specify as YYYY-MM-DD
+  report_date: "AUTO" # if "AUTO", takes Sys.Date()-2; otherwise specify as YYYY-MM-DD
   state_conditions: "Limited Open"
 ---
 
