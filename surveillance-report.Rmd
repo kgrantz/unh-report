@@ -816,6 +816,23 @@ params:
                               nbed = sum(quar_isol_bed, na.rm=TRUE)) %>%
                     ungroup() %>%
                     mutate(date = as.Date(date, origin="1970-01-01"))
+
+  ## data frame: number entering quarantine by campus, residence dorm
+  ts_quar_ent_dorm <- demo_quar %>%
+                      group_by(quar_entrydate, campus_fac, dorm) %>%
+                      summarize(n = n_distinct(uid),
+                                nbed = sum(quar_isol_bed, na.rm=TRUE)) %>%
+                      ungroup() %>%
+                      mutate(date = as.Date(quar_entrydate, origin="1970-01-01"))
+
+  ## data frame: number in quarantine by campus, residence dorm
+  ts_quar_dorm <- demo_quar_long %>%
+                  left_join(demo_quar %>% select(uid, dorm), by="uid") %>%
+                  group_by(date, campus_fac, dorm) %>%
+                  summarize(n = n_distinct(uid),
+                            nbed = sum(quar_isol_bed, na.rm=TRUE)) %>%
+                  ungroup() %>%
+                  mutate(date = as.Date(date, origin="1970-01-01"))
   
   ## data frame: number in isolation by campus, role, testdate
   ts_isol_role <- demo_isol_long %>%
