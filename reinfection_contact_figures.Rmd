@@ -1,0 +1,393 @@
+---
+title: "Figures for reinfection/ variant paper"
+author: "Forrest Jones"
+date: "4/19/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE,warning=FALSE,message = FALSE)
+```
+
+# Load data and libraries
+
+```{r libraries}
+
+library(tidyverse)
+library(cowplot)
+library(lubridate)
+
+
+```
+
+
+```{r data}
+
+demo <- read_csv("raw_data/individualdemographics.csv") 
+
+routinetesting <- read_csv("raw_data/routinetesting.csv",col_types = paste0(rep("c",16),collapse="")) %>%
+        mutate(resultsdate = as.Date(resultsdate),
+               collectdate = as.Date(collectdate),
+               onsetdate = as.Date(onsetdate)) %>%
+        rename(result0=result) %>%
+        mutate(result=recode(result0,
+                             "positive" = "Positive",
+                             "POSITIVE" = "Positive",
+                             "Positive" = "Positive",
+                             "Detected" = "Positive",
+                             "COMPLIANT: PLEASE SUBMIT YOUR NEXT SAMPLE AS SCHEDULED" = "Negative",
+                             "NOT RECOMMENDED FOR DIAGNOSTIC TESTING"="Negative" ,
+
+                             "NEGATIVE" = "Negative",
+                             "Negative" = "Negative",
+
+                             .default = "Other")) %>%
+        left_join(demo) %>%
+        #adjust the variants
+        mutate(vResult= ifelse(is.na(variant),result,variant)) %>%
+        mutate(vResult1 = recode(vResult,
+                                 "Negative"="Negative/Other/None",
+                                 "Other"="Negative/Other/None",
+                                 "None"="Negative/Other/None",
+                                 "Positive"="Positive, not typed"#,
+                                 # "B.1.596"="B.1.596",
+                                 # "B.1.2"="B.1.2",
+                                 # "B.1.1.7" = "B.1.1.7"
+                                 #
+                                 #
+                                 # .default = "Other Variant"
+
+
+
+
+
+
+        ))
+
+        
+contact_data <- read_csv("raw_data/closecontacts.csv")
+        
+pos_tests <- routinetesting %>% filter(result=="Positive") 
+        
+
+```
+
+# Reinfection Figure
+
+```{r}
+
+
+firstinfection <- pos_tests %>% group_by(uid) %>%
+                        summarize(first=min(collectdate)) %>%
+                        filter(first+90<=today())
+
+
+repeatcases <- pos_tests %>%
+                group_by(uid) %>%
+                mutate(count=n()) %>%
+                filter(count>=2)
+
+repeatcases2 <- repeatcases %>%
+                        group_by(uid) %>%
+                        summarize(max=max(collectdate),min=min(collectdate),
+                                  diff=max(collectdate)-min(collectdate))  %>%
+                        filter(diff>=30) %>%
+                        arrange(uid)
+
+
+reinfection_demo <- demo %>%
+                        filter(uid %in% repeatcases2$uid) %>%
+                        left_join(repeatcases2)
+
+reinfections <- routinetesting %>%
+        filter(uid %in% repeatcases2$uid) %>%
+        mutate(lastpos=ifelse(result=="Positive",as.character(collectdate),"1999-01-01")) %>%
+        group_by(uid) %>%
+        mutate(lastpos=max(as.Date(lastpos)))
+
+#with lab
+fig1 <- reinfections %>% arrange(uid,collectdate,result)%>%
+        
+        ggplot(aes(x=collectdate,y=reorder(paste0(substr(uid,1,8),"..."),lastpos)))+
+        geom_line(aes(group=uid))+
+        geom_point(aes(col=result,shape=laboratory
+                       ),size=2)+
+        geom_text(data = repeatcases2,nudge_y=0.35,
+                  aes(x=max-5,y=reorder(paste0(substr(uid,1,8),"..."),max),
+                      label=paste0(as.numeric(diff)," days"))
+                  )+
+        geom_rug(data= distinct(pos_tests,collectdate,uid),
+                 aes(x=collectdate), sides="b",inherit.aes = FALSE,
+                 col="darkorange",alpha=0.05 
+                 )+
+        scale_color_manual("Result",values=c("blue","black","red"))+
+        theme_bw()+
+        ylab("UID")+
+        scale_x_date("Date of Collection", 
+                     breaks = unique(floor_date(reinfections$collectdate ,"months") ),
+                     minor_breaks = NULL
+                     )+
+        scale_shape_manual("Laboratory",values = c(15,7,16,1,17))+
+        theme(axis.text.x = element_text(angle=45,hjust=1))
+
+
+fig1
+
+
+#with variants
+fig2 <- reinfections %>% arrange(uid,collectdate,result)%>%
+        mutate(vResult1=factor(vResult1,
+                               levels = c(
+                                       "Positive, not typed",
+                                       "B.1.596",
+                                       "B.1.2","B.1","P.1",
+                                       "B.1.243","B.1.1.7",
+                                       "B.1.588","B.1.517",
+                                       "B.1.362","B.1.110.3",
+                                       "B.1.1.329","Negative/Other/None" )
+
+                               )) %>%
+        
+        ggplot(aes(x=collectdate,y=reorder(paste0(substr(uid,1,8),"..."),lastpos)))+
+        geom_line(aes(group=uid))+
+        geom_point(aes(col=vResult1,shape=laboratory
+        ),size=2)+
+        geom_text(data = repeatcases2,nudge_y=0.35,
+                  aes(x=max-5,y=reorder(paste0(substr(uid,1,8),"..."),max),
+                      label=paste0(as.numeric(diff)," days"))
+        )+
+        geom_rug(data= distinct(pos_tests,collectdate,uid),
+                 aes(x=collectdate), sides="b",inherit.aes = FALSE,
+                 col="darkorange",alpha=0.05 
+        )+
+        scale_color_manual("Result",values=c(RColorBrewer::brewer.pal(12,"Paired")[c(6,1:5,7:12)],
+                                             "black"
+
+                                             ))+
+        theme_bw()+
+        ylab("UID")+
+        scale_x_date("Date of Collection", 
+                     breaks = unique(floor_date(reinfections$collectdate ,"months") ),
+                     minor_breaks = NULL
+        )+
+        scale_shape_manual("Laboratory",values = c(15,7,16,1,17))+
+        theme(axis.text.x = element_text(angle=45,hjust=1))
+
+
+
+
+
+
+fig2
+
+
+```
+
+# Stoke Hall Figure
+
+```{r stoke-hall}
+
+stokehall_people <- demo %>% filter(dorm == "Stoke Hall")
+
+stokehall_quarantines1 <- contact_data %>% filter(quarantine_person %in% stokehall_people$uid) 
+
+
+stokehall_cases1 <- pos_tests %>%
+        #focus on things only after february 1st
+        filter(collectdate >=as.Date("2021-02-01")) %>%
+        #limit to cases that are from stoke hall or infect people in stoke hall
+        filter(dorm=="Stoke Hall" | uid %in% stokehall_quarantines1$close_contact) %>%
+        mutate(dorm=ifelse(is.na(dorm),paste("Off-Campus",user_status),dorm)) %>%
+        #make sure to only have one row per person
+        distinct(uid,collectdate,dorm,vResult1,variant) %>%
+        #take the first infection only (can modify later)
+        group_by(uid,dorm, collectdate) %>%
+        filter(n()==1 | !is.na(variant)) %>%
+        #take the first infection only (can modify later)
+        group_by(uid,dorm) %>%
+        filter(collectdate==min(collectdate))
+
+#check that people are not listed as cases twice
+stokehall_cases1 %>% group_by(uid) %>%
+        filter(n()>1)       
+
+#quarantines associated are 14 days before the infection
+stokehall_quarantines2 <- stokehall_quarantines1 %>%
+                                left_join(stokehall_cases1,by=c("quarantine_person"="uid")) %>%
+                                filter(qt_entry_date >= collectdate-14) %>%
+                                distinct(quarantine_person,close_contact,qt_entry_date) 
+
+
+#check that people are not listed in quarantine twice
+stokehall_quarantines2 %>% group_by(quarantine_person) %>%
+                filter(n()>1)
+
+
+#add the contacts
+stokehall_cases2 <- stokehall_cases1 %>% 
+        left_join(stokehall_quarantines2, by=c("uid"="quarantine_person")) %>%
+        #if the both the close contact and quarantined person are outside of stoke hall
+        # change the close contact to NA
+        mutate(close_contact = ifelse((!close_contact %in% stokehall_people$uid ) &
+                                              (!uid %in% stokehall_people$uid),
+                                      NA,close_contact
+               )) %>%
+        # if close contact does not have a uid, change to NA
+        mutate(close_contact =ifelse(close_contact %in% demo$uid,close_contact,NA)) %>%
+        arrange(collectdate)
+
+#check that cases are repeated again
+stokehall_cases2 %>% group_by(uid) %>%
+        filter(n()>1)
+
+#assign those not connected as 0 cluster
+stokehall_cases_clustered <-  stokehall_cases2 %>%
+        mutate(cluster=ifelse(uid %in%stokehall_cases2$close_contact,NA,0))
+
+
+#go through each case and find clusters AND pairs in order of collect date
+cluster_counter <- 1
+
+#blank pairs df
+pairs_df <- data.frame()
+
+for (i in stokehall_cases_clustered$uid){
+        
+        #starting case, date, and cluster
+        this_case <- filter(stokehall_cases_clustered, uid == i)
+        
+        # if the case has not been assigned a cluster
+        if(is.na(this_case$cluster)){
+                #assign cluster to individual
+                stokehall_cases_clustered <- stokehall_cases_clustered %>%
+                        mutate(cluster=ifelse(uid==i,cluster_counter,cluster))
+                this_case$cluster <- cluster_counter
+                #move counter
+                cluster_counter <- cluster_counter + 1
+        }
+
+        #contacts of individual i
+        contacts <- stokehall_cases_clustered %>%
+                        filter(close_contact==i) %>%
+                        filter(collectdate-14 < this_case$collectdate)
+        
+        pairs_df <-bind_rows(pairs_df,
+                             data.frame(contacts=contacts$uid) %>%
+                                     mutate(case=i)
+                             )
+
+        stokehall_cases_clustered <- stokehall_cases_clustered %>%
+                mutate(cluster=ifelse(uid %in% contacts$uid,this_case$cluster,cluster))
+
+        
+}
+
+
+#remove non clustered non-stoke dorm peopl
+stokehall_cases_clustered <- stokehall_cases_clustered %>% 
+                        filter(!(cluster==0 & dorm != "Stoke Hall"))
+
+
+
+#number of facets to be used in the graph
+groups <- 7
+
+graph_df_points <- stokehall_cases_clustered %>% 
+                        mutate(group=ifelse(cluster==0,groups/2+0.25,(cluster %% groups) +1)) %>%
+                        group_by(collectdate,group) %>%
+                        mutate(count=1)%>%
+                        mutate(count=cumsum(count)) %>%
+                        # mutate(count=count+rnorm(n(),sd=0.2)) %>%
+                        mutate(count=count-max(count)/2) %>%
+                        ungroup() 
+
+
+
+
+graph_df_lines2 <-   pairs_df %>% left_join(select(graph_df_points,uid,collectdate,count,cluster,group),by=c("case"="uid")) %>%
+                        left_join(select(graph_df_points,uid,collectdate,cluster,count),by=c("contacts"="uid")) %>%
+                        # mutate(curvy=collectdate.y-collectdate.x)
+                        mutate(curvy=cumprod(rep(-1,nrow(.)))) %>%
+                        #curve up
+                        mutate(curvy=ifelse(count.x>count.y,1,curvy)) %>%
+                        #curve down
+                        mutate(curvy=ifelse(count.x<count.y,-1,curvy)) #%>%
+                        # #straight line
+                        # group_by(cluster.x) %>%
+                        # arrange(collectdate.y) %>%
+                        # mutate(order=1:n()) %>%
+                        # mutate(curvy= ifelse(order==1 & count.x==count.y,0,curvy))
+        
+        
+        
+                        
+        
+        
+        
+ 
+graph_df_points%>%
+        ggplot()+
+        geom_curve(data=filter(graph_df_lines2,curvy==-1), curvature=-0.2,
+                  aes(x=collectdate.x,y=count.x,xend=collectdate.y,yend=count.y
+                      ))+
+        geom_curve(data=filter(graph_df_lines2,curvy==1), curvature=0.2,
+                   aes(x=collectdate.x,y=count.x,xend=collectdate.y,yend=count.y
+                   ))+
+        # geom_curve(data=filter(graph_df_lines2,curvy==0), curvature=0,
+        #            aes(x=collectdate.x,y=count.x,xend=collectdate.y,yend=count.y
+        #            ))+
+        geom_point(aes(x=collectdate,y=count,col=vResult1,shape=dorm)) +
+        facet_grid(reorder(group,-group)~., #scales="free_y",
+                   space = "free_y")+
+        theme_cowplot()+
+        theme(
+              strip.background = element_blank(),
+              strip.text = element_blank(),
+              axis.text.y= element_blank(),
+              axis.line.y =  element_blank(),
+              axis.ticks.y =   element_blank(),
+              axis.title.y =   element_blank() ,
+              panel.spacing =  unit(0, "lines")
+        )+
+        xlab("Date of Collection")
+
+
+#straight line graph
+
+# graph_df_lines <-  bind_rows(
+#         
+#         
+#                         select(graph_df_points,uid,collectdate,count,group) %>%
+#                                 right_join(mutate(pairs_df,pair_id= 1:n()), by=c("uid"="case")),
+#                         select(graph_df_points,uid,collectdate,count,group) %>%
+#                                 right_join(mutate(pairs_df,pair_id= 1:n()), by=c("uid"="contacts")),
+#                         
+#                         
+#                         )
+# 
+# 
+#                         
+#                         
+#                                 
+# 
+# graph_df_points%>%
+#                         ggplot()+
+#                         geom_point(aes(x=collectdate,y=count,col=dorm)) +
+#                         geom_line(data=graph_df_lines,
+#                                   aes(x=collectdate,y=count,group=pair_id))+
+#                         facet_grid(group~.,scales="free_y",
+#                                    space = "free_y")+
+#                         theme_cowplot()+
+#                         theme(strip.background = element_blank(),
+#                               strip.text = element_blank(),
+#                               axis.text.y= element_blank(),
+#                               axis.line.y =  element_blank(),
+#                               axis.ticks.y =   element_blank(),
+#                               axis.title.y =   element_blank() 
+#                               )
+# 
+
+
+
+
+```
