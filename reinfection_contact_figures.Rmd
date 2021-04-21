@@ -99,6 +99,9 @@ reinfection_demo <- demo %>%
                         filter(uid %in% repeatcases2$uid) %>%
                         left_join(repeatcases2)
 
+
+DT::datatable(reinfection_demo)
+
 reinfections <- routinetesting %>%
         filter(uid %in% repeatcases2$uid) %>%
         mutate(lastpos=ifelse(result=="Positive",as.character(collectdate),"1999-01-01")) %>%
@@ -133,6 +136,11 @@ fig1 <- reinfections %>% arrange(uid,collectdate,result)%>%
 
 fig1
 
+```
+
+
+
+```{r}
 
 #with variants
 fig2 <- reinfections %>% arrange(uid,collectdate,result)%>%
@@ -150,16 +158,17 @@ fig2 <- reinfections %>% arrange(uid,collectdate,result)%>%
         
         ggplot(aes(x=collectdate,y=reorder(paste0(substr(uid,1,8),"..."),lastpos)))+
         geom_line(aes(group=uid))+
-        geom_point(aes(col=vResult1,shape=laboratory
+        geom_point(aes(col=vResult1#,shape=laboratory
         ),size=2)+
         geom_text(data = repeatcases2,nudge_y=0.35,
                   aes(x=max-5,y=reorder(paste0(substr(uid,1,8),"..."),max),
                       label=paste0(as.numeric(diff)," days"))
         )+
         geom_rug(data= distinct(pos_tests,collectdate,uid),
-                 aes(x=collectdate), sides="b",inherit.aes = FALSE,
-                 col="darkorange",alpha=0.05 
+                 aes(x=collectdate), sides="tr",inherit.aes = FALSE,
+                 col="darkorange",alpha=0.05 ,outside=TRUE
         )+
+        coord_cartesian(clip = "off")+
         scale_color_manual("Result",values=c(RColorBrewer::brewer.pal(12,"Paired")[c(6,1:5,7:12)],
                                              "black"
 
@@ -171,7 +180,10 @@ fig2 <- reinfections %>% arrange(uid,collectdate,result)%>%
                      minor_breaks = NULL
         )+
         scale_shape_manual("Laboratory",values = c(15,7,16,1,17))+
-        theme(axis.text.x = element_text(angle=45,hjust=1))
+        theme(axis.text.x = element_text(angle=45,hjust=1),
+              plot.margin = margin(1, 1, 1, 1, "cm")
+              
+              )
 
 
 
@@ -179,6 +191,13 @@ fig2 <- reinfections %>% arrange(uid,collectdate,result)%>%
 
 
 fig2
+
+ggsave(plot=fig2,filename="figures/reinfection_figures/reinfection.pdf",
+       width = 9.3,height=7.5
+       
+       )
+
+
 
 
 ```
