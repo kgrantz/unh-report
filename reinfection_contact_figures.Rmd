@@ -1,12 +1,12 @@
 ---
 title: "Figures for reinfection/ variant paper"
 author: "Forrest Jones"
-date: "4/19/2021"
+date: "`r Sys.Date()`"
 output: html_document
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE,warning=FALSE,message = FALSE)
+knitr::opts_chunk$set(echo = FALSE,warning=FALSE,message = FALSE)
 ```
 
 # Load data and libraries
@@ -206,7 +206,11 @@ ggsave(plot=fig2,filename="figures/reinfection_figures/reinfection.pdf",
 
 ```{r stoke-hall}
 
-stokehall_people <- demo %>% filter(dorm == "Stoke Hall")
+# woodside <- demo %>% distinct(dorm) %>%
+#                         filter(str_detect(dorm, "Woodside"))
+the_dorm <- "Stoke Hall" #woodside$dorm
+
+stokehall_people <- demo %>% filter(dorm %in% the_dorm)
 
 stokehall_quarantines1 <- contact_data %>% filter(quarantine_person %in% stokehall_people$uid) 
 
@@ -215,7 +219,7 @@ stokehall_cases1 <- pos_tests %>%
         #focus on things only after february 1st
         filter(collectdate >=as.Date("2021-02-01")) %>%
         #limit to cases that are from stoke hall or infect people in stoke hall
-        filter(dorm=="Stoke Hall" | uid %in% stokehall_quarantines1$close_contact) %>%
+        filter(dorm %in% the_dorm | uid %in% stokehall_quarantines1$close_contact) %>%
         mutate(dorm=ifelse(is.na(dorm),paste("Off-Campus",user_status),dorm)) %>%
         #make sure to only have one row per person
         distinct(uid,collectdate,dorm,vResult1,variant) %>%
@@ -304,7 +308,7 @@ for (i in stokehall_cases_clustered$uid){
 
 #remove non clustered non-stoke dorm peopl
 stokehall_cases_clustered <- stokehall_cases_clustered %>% 
-                        filter(!(cluster==0 & dorm != "Stoke Hall"))
+                        filter(!(cluster==0 & !(dorm %in% the_dorm)))
 
 
 
@@ -410,3 +414,68 @@ graph_df_points%>%
 
 
 ```
+
+
+# Investigate protective efficacy and transmission efficacy
+
+Look only at contacts to see the protective efficacy of reinfections and how well people who are reinfected are at spreading the virus
+
+```{r}
+
+
+infection2020 <- filter(pos_tests, year(collectdate)==2020)%>%
+        distinct(uid,collectdate)
+infection2021 <- filter(pos_tests, year(collectdate)==2021) %>%
+                        distinct(uid,collectdate) %>%
+                        group_by(uid) %>%
+                        summarize(collectdate=min(collectdate))
+
+
+
+
+
+#protective efficacy
+
+ar_df <- contact_data %>% select(-close_contact) %>%
+        mutate(infected2020=quarantine_person %in% infection2020$uid) %>%
+        left_join(infection2021,by=c(quarantine_person="uid")) %>%
+        mutate(infected2021= collectdate-as.Date(qt_entry_date) <14) %>%
+        mutate(infected2021 = ifelse(is.na(infected2021),FALSE,TRUE))
+        
+
+ar_df%>% 
+        group_by(infected2020,infected2021) %>%
+        summarize(contacts=n())
+
+ar_df %>% group_by(infected2020) %>%
+                summarize(AR=mean(infected2021)) %>%
+                mutate(ARR=AR/max(AR)) %>%
+                mutate(PE=1-ARR)
+
+
+ #efficacy of transmission
+
+trans_df <- contact_data %>% 
+        left_join(select(reinfection_demo,uid,max), by=c("close_contact"="uid")) %>% 
+        mutate(reinfector=as.Date(qt_entry_date)-max<14)  %>%
+        mutate(reinfector=ifelse(is.na(reinfector),FALSE,reinfector))  %>%
+        left_join(infection2021,by=c(quarantine_person="uid")) %>%
+        mutate(infected2021= collectdate-as.Date(qt_entry_date) <14) %>%
+        mutate(infected2021 = ifelse(is.na(infected2021),FALSE,TRUE))
+
+
+trans_df%>% 
+        group_by(reinfector,infected2021)  %>%
+        summarize(contacts=n())
+
+
+trans_df%>% 
+        group_by(reinfector) %>%
+        summarize(AR=mean(infected2021)) %>%
+        mutate(ARR=AR/min(AR)) 
+        
+
+     
+
+
+````
