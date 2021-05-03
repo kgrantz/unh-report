@@ -25,7 +25,7 @@ library(lubridate)
 
 demo <- read_csv("raw_data/individualdemographics.csv") 
 
-routinetesting <- read_csv("raw_data/routinetesting.csv",col_types = paste0(rep("c",16),collapse="")) %>%
+routinetesting <- read_csv("raw_data/routinetesting.csv",col_types = paste0(rep("c",24),collapse="")) %>%
         mutate(resultsdate = as.Date(resultsdate),
                collectdate = as.Date(collectdate),
                onsetdate = as.Date(onsetdate)) %>%
@@ -62,7 +62,12 @@ routinetesting <- read_csv("raw_data/routinetesting.csv",col_types = paste0(rep(
 
 
 
-        ))
+        )) %>%
+        mutate(n_ct=as.numeric(n_ct),
+               s_ct=as.numeric(s_ct),
+               orf1ab_ct=as.numeric(orf1ab_ct),
+               ms2_ct=as.numeric(ms2_ct)
+               )
 
         
 contact_data <- read_csv("raw_data/closecontacts.csv")
@@ -478,4 +483,33 @@ trans_df%>%
      
 
 
-````
+```
+
+
+```{r}
+
+reinfection_ct <- pos_tests %>% filter(uid %in% reinfection_demo$uid) %>%
+                arrange(uid,collectdate) %>%
+                group_by(uid) %>%
+                mutate(degree=1:n()) %>%
+                mutate(positives=n()) %>%
+                filter(!is.na(n_ct)) %>%
+                mutate(degree=ifelse(positives==3,degree-1,degree)) %>%
+                select(uid,collectdate,degree,n_ct) 
+
+
+reinfection_ct %>% group_by(degree) %>%
+                count()
+
+
+reinfection_ct %>% ggplot(aes(y=n_ct,x=factor(degree)))+
+                geom_boxplot()+
+                geom_jitter(height=0)+
+                xlab("Infection")+
+                ggtitle("Comparison of Ct values in reinfected individuals")
+
+
+t.test(data=reinfection_ct, n_ct ~ degree)
+
+```
+
