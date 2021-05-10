@@ -107,6 +107,15 @@ reinfection_demo <- demo %>%
 
 DT::datatable(reinfection_demo)
 
+pos_tests %>% filter(uid %in% repeatcases2$uid) %>% 
+        select(uid,collectdate,resultsdate,result0,result,
+               laboratory,test_name,vResult1
+               ) %>%
+        arrange(uid,collectdate) %>%
+        write_csv("test_results_reinfection.csv")
+
+
+
 reinfections <- routinetesting %>%
         filter(uid %in% repeatcases2$uid) %>%
         mutate(lastpos=ifelse(result=="Positive",as.character(collectdate),"1999-01-01")) %>%
@@ -513,3 +522,165 @@ t.test(data=reinfection_ct, n_ct ~ degree)
 
 ```
 
+
+# Make sure that each row is a distinct cases
+
+
+```{r}
+
+contact_data <- read_csv("raw_data/closecontacts.csv")
+        
+# imperfect cases but will work for now
+# need to deal with definitions of positive and variants
+
+all_cases <- routinetesting %>% filter(result=="Positive" & vResult1 != "Negative/Other/None")  %>%
+                        # if collect date missing, put result date
+                        mutate(date=ifelse(is.na(collectdate),as.character(resultsdate),as.character(collectdate))) %>%
+                        mutate(date=as.Date(date)) %>%
+                        select(uid,date,result,vResult1) %>%
+                        arrange(uid,date) %>%
+                        group_by(uid) %>% 
+                        mutate(n=n(),
+                               min_date = min(date),
+                               max_date = max(date),
+                               range=as.numeric(max_date-min_date)      
+                               )
+
+single_cases <- filter(all_cases,n==1)
+
+potential_reinfections <- filter(all_cases, n>1 & range>=80)%>%
+                        # if some positive results have variant results and others dont,take the one where its been typed
+                        mutate(vResult1=ifelse(vResult1=="Positive, not typed","",vResult1)) %>%
+                        group_by(uid,date,result) %>%
+                        summarize(vResult1=paste0(vResult1,collapse = "")) %>%
+                        mutate(vResult1=ifelse(vResult1=="","Positive, not typed",vResult1)) %>%
+                        group_by(uid) %>%
+                        mutate(n=n())
+
+summary(potential_reinfections)
+
+
+not_reinfections <- filter(all_cases,n>1 & range<80) %>%
+                        #use the first positive date
+                        group_by(uid) %>%
+                        mutate(date=min(date)) %>%
+                        #remove any duplicates for variant results
+                        distinct(uid,date,result,vResult1) %>%
+                        # if some positive results have variant results and others dont,take the one where its been typed
+                        mutate(vResult1=ifelse(vResult1=="Positive, not typed","",vResult1)) %>%
+                        group_by(uid,result,date) %>%
+                        summarize(vResult1=paste0(vResult1,collapse = "")) %>%
+                        mutate(vResult1=ifelse(vResult1=="","Positive, not typed",vResult1)) %>%
+                        group_by(uid) %>%
+                        mutate(n=n())
+
+summary(not_reinfections)
+
+
+final_cases <- bind_rows(single_cases,potential_reinfections,not_reinfections) %>%
+                                                select(uid,date,vResult1) 
+
+
+
+```
+
+
+# case pairs
+
+```{r}
+
+case_pairs <- contact_data %>%
+                        rename(quar_person=quarantine_person,
+                               inf_person=close_contact,
+                               quar_entry_date=qt_entry_date) %>%
+                        mutate(quar_entry_date=as.Date(quar_entry_date)) %>%
+                        #limit those where both are in the case file
+                        filter(quar_person %in% final_cases$uid) %>%
+                        filter(inf_person %in% final_cases$uid) %>%
+                        #bring in the case_data
+                        left_join(final_cases, by=c("quar_person"="uid")) %>%
+                        rename(quar_pos_date=date,quar_variant=vResult1) %>%
+                        left_join(final_cases, by=c("inf_person"="uid")) %>%
+                        rename(inf_pos_date=date,inf_variant=vResult1) %>%
+                        #calculate time from quarantine to positive
+                        mutate(days_quar_pos=as.numeric(quar_pos_date-quar_entry_date)) %>%
+                        #calculate time between positives
+                        mutate(days_pos_pos=as.numeric(quar_pos_date-inf_pos_date)) %>%
+                        # limit to those where the quarantine date is close to
+                        # the positive date
+                        filter(days_quar_pos<=14 & days_quar_pos >=-2) %>%
+                        filter(days_pos_pos<=14 & days_pos_pos >=0)
+
+
+
+case_pairs %>% group_by(inf_variant,quar_variant) %>%
+                count() %>%
+                filter(quar_variant!=inf_variant) %>%
+                filter(quar_variant!="Positive, not typed") %>%
+                filter(inf_variant!="Positive, not typed" ) %>%
+                rename(Infector=inf_variant,
+                       Infectee=quar_variant
+                       ) %>%
+                flextable::flextable()
+
+
+
+
+
+```
+
+
+
+```{r}
+
+the_dorm <- "Stoke Hall" #woodside$dorm
+
+stokehall_people <- demo %>% filter(dorm %in% the_dorm)
+
+stoke_cases <- filter(single_cases, uid %in% stokehall_people$uid)
+stoke_pairs <- filter(case_pairs, quar_person %in% stoke_cases$uid) %>%
+                filter(inf_person %in% stoke_cases$uid)
+
+
+
+
+```
+
+```{r}
+pacman::p_load(
+   rio,          # File import
+   here,         # File locator
+   tidyverse,    # Data management + ggplot2 graphics
+   remotes       # Package installation from github
+)
+
+# pacman::p_install_gh("reconhub/epicontacts@timeline")
+library(epicontacts)
+
+```
+
+
+```{r}
+
+
+epic <- make_epicontacts(
+  linelist = stoke_cases,
+  contacts = stoke_pairs,
+  id = "uid",
+  from = "inf_person",
+  to = "quar_person",
+  directed = TRUE
+)
+
+hi <- plot(epic,x_axis = "date",
+       label = FALSE,
+     node_color = "vResult1",
+       network_shape = "rectangle",
+     arrow_size = 0.3,
+        node_size = 8,
+
+)
+
+hi
+
+```
